@@ -10,7 +10,7 @@ export default function Index() {
         alignItems: "center",
       }}
     >
-      <WeightScreen/>
+      <Text>Edit app/index.tsx to edit this screen.</Text>
     </View>
   );
 }
