@@ -100,7 +100,7 @@ export default function HeightScreen() {
             initialValue={totalInches}
             fractionDigits={0}
             onValueChange={(value: string) => setTotalInches(parseInt(value))}
-            unit=" cm"
+            unit=""
             indicatorColor="#327689"
             shortStepColor="#B3D8E2"
             longStepColor="#B3D8E2"
@@ -171,9 +171,9 @@ const styles = StyleSheet.create({
   heightNumber: {
     fontSize: 86,
     textAlign: "center",
-    marginBottom: 40,
+    marginBottom: -10,
     color: "#C3592F",
-    fontWeight: 700,
+    fontWeight: "700",
   },
   rulerText: {
     fontSize: 24,
