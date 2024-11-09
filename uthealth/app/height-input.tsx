@@ -8,15 +8,13 @@ import { RulerPicker } from "react-native-ruler-picker";
 export default function HeightScreen() {
   const router = useRouter();
   const [unit, setUnit] = useState<"ft" | "cm">("ft");
-  const [totalInches, setTotalInches] = useState<number>(64); // Default 5'4"
+  const [totalInches, setTotalInches] = useState<number>(64); 
 
   const handleUnitChange = (newUnit: "ft" | "cm") => {
     if (newUnit === "cm" && unit === "ft") {
-      // Convert total inches to cm
       const cm = Math.round(totalInches * 2.54);
       setTotalInches(cm);
     } else if (newUnit === "ft" && unit === "cm") {
-      // Convert cm to total inches
       const inches = Math.round(totalInches / 2.54);
       setTotalInches(inches);
     }
@@ -32,8 +30,8 @@ export default function HeightScreen() {
   const getMinMax = () => {
     if (unit === "ft") {
       return { 
-        min: 48, // 4'0" in inches
-        max: 96, // 8'0" in inches
+        min: 48, 
+        max: 96, 
       };
     } else {
       return { 
@@ -150,7 +148,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: 700,
     lineHeight: 19.68,
     color: "#C3592F"
   },
@@ -175,7 +173,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 40,
     color: "#C3592F",
-    fontWeight: "700",
+    fontWeight: 700,
   },
   rulerText: {
     fontSize: 24,
@@ -195,5 +193,18 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "600",
-  }
+  },
+  slider: {
+    height: 40,
+    backgroundColor: "#f0f0f0",
+    borderRadius: 20,
+  },
+  sliderLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  sliderContainer: {
+    marginHorizontal: 20,
+  },
 });
