@@ -8,35 +8,38 @@ import { RulerPicker } from "react-native-ruler-picker";
 export default function HeightScreen() {
   const router = useRouter();
   const [unit, setUnit] = useState<"ft" | "cm">("ft");
-  const [height, setHeight] = useState<number>(170); // Default in cm
+  const [totalInches, setTotalInches] = useState<number>(64); // Default 5'4"
 
   const handleUnitChange = (newUnit: "ft" | "cm") => {
     if (newUnit === "cm" && unit === "ft") {
-      // Convert feet to cm
-      setHeight(Math.round(height * 30.48));
+      // Convert total inches to cm
+      const cm = Math.round(totalInches * 2.54);
+      setTotalInches(cm);
     } else if (newUnit === "ft" && unit === "cm") {
-      // Convert cm to feet
-      setHeight(Math.round((height / 30.48) * 10) / 10);
+      // Convert cm to total inches
+      const inches = Math.round(totalInches / 2.54);
+      setTotalInches(inches);
     }
     setUnit(newUnit);
   };
 
-  // Format height display
-  const formatHeight = (value: number): string => {
-    if (unit === "ft") {
-      const feet = Math.floor(value);
-      const inches = Math.round((value % 1) * 12);
-      return `${feet}'${inches}"`;
-    }
-    return `${Math.round(value)}`;
+  const formatHeight = (inches: number): string => {
+    const feet = Math.floor(inches / 12);
+    const remainingInches = inches % 12;
+    return `${feet}'${remainingInches}"`;
   };
 
-  // Get min and max values based on unit
   const getMinMax = () => {
     if (unit === "ft") {
-      return { min: 4, max: 7 }; // Common range for height in feet
+      return { 
+        min: 48, // 4'0" in inches
+        max: 96, // 8'0" in inches
+      };
     } else {
-      return { min: 120, max: 220 }; // Equivalent range in centimeters
+      return { 
+        min: 120, 
+        max: 220,
+      };
     }
   };
 
@@ -68,28 +71,50 @@ export default function HeightScreen() {
         </Pressable>
       </View>
 
-      // Remove the valueFormatter prop and handle the formatting in onValueChange
-
-<RulerPicker
-  min={min}
-  max={max}
-  step={unit === "ft" ? 0.1 : 1}
-  initialValue={height}
-  fractionDigits={unit === "ft" ? 1 : 0}
-  onValueChange={(value: string) => {
-    const numValue = parseFloat(value);
-    setHeight(numValue);
-  }}
-  unit={unit === "ft" ? "'" : " cm"}  // Add the unit here
-  indicatorColor="#327689"
-  shortStepColor="#B3D8E2"
-  longStepColor="#B3D8E2"
-  valueTextStyle={styles.heightNumber}
-/>
+      {unit === "ft" ? (
+        <View style={styles.heightContainer}>
+          <Text style={styles.heightNumber}>
+            {formatHeight(totalInches)}
+          </Text>
+          <RulerPicker
+            min={min}
+            max={max}
+            step={1}
+            initialValue={totalInches}
+            fractionDigits={0}
+            onValueChange={(value: string) => {
+              const inches = parseInt(value);
+              setTotalInches(inches);
+            }}
+            unit=""
+            indicatorColor="#327689"
+            shortStepColor="#B3D8E2"
+            longStepColor="#B3D8E2"
+            valueTextStyle={styles.rulerText}
+          />
+        </View>
+      ) : (
+        <View>
+          <RulerPicker
+            min={min}
+            max={max}
+            step={1}
+            initialValue={totalInches}
+            fractionDigits={0}
+            onValueChange={(value: string) => setTotalInches(parseInt(value))}
+            unit=" cm"
+            indicatorColor="#327689"
+            shortStepColor="#B3D8E2"
+            longStepColor="#B3D8E2"
+            valueTextStyle={styles.heightNumber}
+          />
+        </View>
+      )}
 
       <Pressable 
         style={styles.continueButton}
         onPress={() => router.back()}
+        //For now it goes back to the previous page
       >
         <Text style={styles.continueButtonText}>Continue</Text>
       </Pressable>
@@ -141,12 +166,21 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 1,
   },
+  heightContainer: {
+    alignItems: "center",
+    width: "100%",
+  },
   heightNumber: {
     fontSize: 86,
     textAlign: "center",
     marginBottom: 40,
     color: "#C3592F",
     fontWeight: "700",
+  },
+  rulerText: {
+    fontSize: 24,
+    color: "#C3592F",
+    fontWeight: "600",
   },
   continueButton: {
     backgroundColor: "#C3592F",
