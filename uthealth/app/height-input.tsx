@@ -92,7 +92,7 @@ export default function HeightScreen() {
           />
         </View>
       ) : (
-        <View>
+        <View style={styles.heightContainer}>
           <RulerPicker
             min={min}
             max={max}
