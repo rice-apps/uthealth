@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, View, Text } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { RulerPicker } from "react-native-ruler-picker";
+import HeightScreen from "./height-input";
 
 export default function WeightScreen() {
   const router = useRouter();
@@ -12,6 +13,12 @@ export default function WeightScreen() {
 
   return (
     <View style={styles.container}>
+      <Pressable 
+        style={styles.backButton}
+        onPress={() => router.back()}
+      >
+        <Ionicons name="arrow-back" size={24} color="#C3592F" />
+      </Pressable>
         <Text style={styles.question}>What is your current weight?</Text>
         <View style={styles.toggleContainer}>
             <Pressable
@@ -43,7 +50,14 @@ export default function WeightScreen() {
         //   indicatorHeight={92}
           valueTextStyle={styles.weightNumber}
         />
-      </View>
+      <Pressable 
+  style={styles.continueButton}
+  onPress={() => router.push("/height-input")}  // Assuming your file is at app/height-input.tsx
+>
+<Text style={styles.continueButtonText}>Continue</Text>
+</Pressable>
+    </View>
+      
   );
 }
 
@@ -110,11 +124,17 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   continueButton: {
-    backgroundColor: "#000",
+    backgroundColor: "#C3592F",
     padding: 20,
     borderRadius: 30,
     alignItems: "center",
     marginTop: "auto",
     marginBottom: 40,
+    width: "100%",
   },
+  continueButtonText: {
+    color: "white",
+    fontSize: 18,
+    fontWeight: "600",
+  }
 });
