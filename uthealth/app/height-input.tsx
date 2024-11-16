@@ -1,3 +1,4 @@
+// Height Page
 import { StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -41,6 +42,18 @@ export default function HeightScreen() {
     }
   };
 
+  const handleContinue = () => {
+    const height = unit === "ft" ? {
+      feet: Math.floor(totalInches / 12),
+      inches: totalInches % 12,
+      totalInches: totalInches
+    } : {
+      cm: totalInches
+    };
+    
+    router.back();
+  };
+
   const { min, max } = getMinMax();
 
   return (
@@ -52,7 +65,7 @@ export default function HeightScreen() {
         <Ionicons name="arrow-back" size={24} color="#C3592F" />
       </Pressable>
 
-      <Text style={styles.question}>What is your height?</Text>
+      <Text style={styles.question}>What is your current height?</Text>
       
       <View style={styles.toggleContainer}>
         <Pressable
@@ -93,6 +106,9 @@ export default function HeightScreen() {
         </View>
       ) : (
         <View style={styles.heightContainer}>
+          <Text style={styles.heightNumber}>
+            {totalInches} cm
+          </Text>
           <RulerPicker
             min={min}
             max={max}
@@ -104,18 +120,19 @@ export default function HeightScreen() {
             indicatorColor="#327689"
             shortStepColor="#B3D8E2"
             longStepColor="#B3D8E2"
-            valueTextStyle={styles.heightNumber}
+            valueTextStyle={styles.rulerText}
           />
         </View>
       )}
 
-      <Pressable 
-        style={styles.continueButton}
-        onPress={() => router.back()}
-        //For now it goes back to the previous page
-      >
-        <Text style={styles.continueButtonText}>Continue</Text>
-      </Pressable>
+      <View style={styles.buttonContainer}>
+        <Pressable 
+          style={styles.continueButton}
+          onPress={handleContinue}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -148,7 +165,7 @@ const styles = StyleSheet.create({
   },
   toggleText: {
     fontSize: 16,
-    fontWeight: 700,
+    fontWeight: "700",
     lineHeight: 19.68,
     color: "#C3592F"
   },
@@ -167,6 +184,7 @@ const styles = StyleSheet.create({
   heightContainer: {
     alignItems: "center",
     width: "100%",
+    flex: 1,
   },
   heightNumber: {
     fontSize: 86,
@@ -180,31 +198,21 @@ const styles = StyleSheet.create({
     color: "#C3592F",
     fontWeight: "600",
   },
+  buttonContainer: {
+    width: "100%",
+    paddingHorizontal: 20,
+    paddingBottom: 40,
+  },
   continueButton: {
     backgroundColor: "#C3592F",
     padding: 20,
     borderRadius: 30,
     alignItems: "center",
-    marginTop: "auto",
-    marginBottom: 40,
     width: "100%",
   },
   continueButtonText: {
     color: "white",
     fontSize: 18,
     fontWeight: "600",
-  },
-  slider: {
-    height: 40,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 20,
-  },
-  sliderLabels: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 10,
-  },
-  sliderContainer: {
-    marginHorizontal: 20,
   },
 });
