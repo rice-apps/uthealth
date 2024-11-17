@@ -152,6 +152,6 @@ const styles = StyleSheet.create({
 	},
 	enrollLink: {
 		fontWeight: 'bold',
-		color: '#000080', // Dark blue for emphasis
+		color: '#000080', 
 	},
 })
