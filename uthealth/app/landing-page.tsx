@@ -1,11 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Text, View, FlatList, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import { Text, View, FlatList, TouchableOpacity, ScrollView, Dimensions } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Icon from "react-native-vector-icons/MaterialIcons"; // MaterialIcons for icons
 import "../global.css";
 
+// TODO: Need to implement infiinite scrolling/fix the readjustment after selection
+
+const RANGE = 20 // amount of dates before and after selected date
+
 // Helper function to generate surrounding days
-const generateSurroundingDates = (centerDate: Date, range: number = 3) => {
+const generateSurroundingDates = (centerDate: Date, range: number = RANGE) => {
   const dates = [];
   for (let i = -range; i <= range; i++) {
     const newDate = new Date(centerDate);
@@ -25,6 +29,24 @@ export default function LandingPage() {
   const [selectedDate, setSelectedDate] = useState(new Date(2024, 5, 21)); // Default date
   const [dates, setDates] = useState(generateSurroundingDates(new Date(2024, 5, 21)));
 
+  // Reference to FlatList
+  const flatListRef = useRef<FlatList>(null);
+
+  // Calculate the middle index based on the range
+  const range = RANGE;
+  const middleIndex = RANGE; // 0-based index
+
+  useEffect(() => {
+    // Scroll to the desired index whenever dates change
+    if (flatListRef.current) {
+      flatListRef.current.scrollToIndex({
+        index: middleIndex+2, // idk why this works 
+        animated: false, // Disable animation
+        viewPosition: 1, 
+      });
+    }
+  }, [dates]);
+
   const showDatePicker = () => {
     setDatePickerVisibility(true);
   };
@@ -35,13 +57,13 @@ export default function LandingPage() {
 
   const handleConfirm = (date: Date) => {
     setSelectedDate(date);
-    setDates(generateSurroundingDates(date));
+    setDates(generateSurroundingDates(date, range));
     hideDatePicker();
   };
 
   const handleCardSelect = (fullDate: Date) => {
     setSelectedDate(fullDate);
-    setDates(generateSurroundingDates(fullDate)); // Adjust surrounding dates
+    setDates(generateSurroundingDates(fullDate, range)); // Adjust surrounding dates
   };
 
   const renderCalendarCard = ({ item }: { item: { id: string; dayName: string; dayNumber: number; fullDate: Date } }) => {
@@ -68,6 +90,17 @@ export default function LandingPage() {
     year: "numeric",
   });
 
+  // Optional: Define item layout if items have fixed size for performance optimization
+  const ITEM_WIDTH = 64; // w-16 (16 * 4 = 64) + mx-2 (2 * 4 * 2 = 16) = total width per item
+  const ITEM_MARGIN_HORIZONTAL = 8; // mx-2 corresponds to 8 (assuming Tailwind's scale)
+
+  // Layout for flatlist item 
+  const getItemLayout = (data: any, index: number) => ({
+    length: ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL,
+    offset: (ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL) * index,
+    index,
+  });
+
   return (
     <View className="flex-1 bg-blue-50 px-4">
       {/* Calendar Button in the top-right corner */}
@@ -87,6 +120,7 @@ export default function LandingPage() {
       <ScrollView className="flex-1">
         {/* Horizontal Date Selector */}
         <FlatList
+          ref={flatListRef}
           className="mt-4"
           horizontal
           data={dates}
@@ -97,6 +131,21 @@ export default function LandingPage() {
             justifyContent: "center",
             paddingHorizontal: 8,
             paddingVertical: 8,
+          }}
+          // Optional: Improve performance by specifying item layout
+          getItemLayout={getItemLayout}
+          initialScrollIndex={middleIndex-2} // Adjusted for shifted position idk why this is the position
+          // Handle cases where the FlatList hasn't yet rendered the initial index
+          onScrollToIndexFailed={() => {
+            setTimeout(() => {
+              if (flatListRef.current) {
+                flatListRef.current.scrollToIndex({
+                  index: middleIndex+2, // idk why this is the position
+                  animated: false, // Disable animation
+                  viewPosition:1, // Shifted view position to the right
+                });
+              }
+            }, 100);
           }}
         />
 
