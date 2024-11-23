@@ -5,58 +5,132 @@ import { Dimensions, TouchableOpacity, TouchableWithoutFeedback, View, Text, But
 import WheelPicker from '@quidone/react-native-wheel-picker';
 
 export default function Dateofbirth() {
-  const data = [...Array(32).keys()].map((index) => ({
+  const monthdata = [...Array(32).keys()].map((index) => ({
     value: index,
     label: index.toString(),
   }))
-  data.unshift({ value: 'Month', label: 'Month' })
+  monthdata.unshift({ value: 'Month', label: 'Month' })
+
+  const yeardata = [...Array(180).keys()].map((index) => ({
+    value: index,
+    label: index.toString(),
+  }))
+  yeardata.unshift({ value: 'Year', label: 'Year' })
+
+
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
-  const [value, setValue] = useState('Month');
+
+
+  const [month, setMonth] = useState('Month');
+  const [year, setYear] = useState('Year');
+  const [day, setDay] = useState('Day');
+
+
   const [isYearVisible, setYearIsVisible] = useState(false);
-  const valueRef = useRef(value);
-  const handleValueChanged = ({ item: { value } }) => {
-    valueRef.current = value;
-    console.log(value)
-  };
+  const [isMonthVisible, setMonthIsVisible] = useState(false);
+  const [isDayVisible, setDayIsVisible] = useState(false);
+
+
+  const monthValueRef = useRef(month);
+  const yearValueRef = useRef(year);
+  const dayValueRef = useRef(day);
+
   const handleYearButtonPress = () => {
     setYearIsVisible(true)
   };
-  const handleValueEnd = ({ item: { value } }) => {
-    setValue(value)
+  const handleMonthButtonPress = () => {
+    setMonthIsVisible(true)
+  };
+  const handleDayButtonPress = () => {
+    setDayIsVisible(true)
+  };
+
+  const handleMonthValueChanging = ({ item: { value } }) => {
+    monthValueRef.current = value;
+    console.log(value)
+  };
+
+
+  const handleDayValueChanging = ({ item: { value } }) => {
+    dayValueRef.current = value;
+    console.log(value)
+  };
+  const handleDayValueChanged = ({ item: { value } }) => {
+    setDay(value)
   }
+
+
+  const handleYearValueChanging = ({ item: { value } }) => {
+    yearValueRef.current = value;
+    console.log(value)
+  };
+  const handleYearValueChanged = ({ item: { value } }) => {
+    setYear(value)
+  }
+
+
   const handleTapOutside = () => {
-    setValue(valueRef.current)
+    setMonth(monthValueRef.current)
+    setYear(yearValueRef.current)
     console.log("pressed")
     setYearIsVisible(false)
+    setDayIsVisible(false)
+    setMonthIsVisible(false)
   }
   return (
     <View style={styles.container}>
       <TouchableWithoutFeedback onPress={handleTapOutside} accessible={false}>
         <View style={[styles.wrapper, { width, height }]} onLayout={() => setSize(Dimensions.get('window'))} />
       </TouchableWithoutFeedback>
-
       <Text style={styles.title}>Date of Birth</Text>
-      <View style={styles.year}>
-        {isYearVisible && (
-          <View style={styles.year}>
-            <View style={styles.date}>
-              <WheelPicker
-                data={data} // Data to be used by the picker
-                value={value} // Current value
-                onValueChanging={handleValueChanged} // Handle value change
-                onValueChanged={handleValueEnd}
-                renderOverlay={() => null}
-                itemTextStyle={styles.pickerItemText}
-              />
+      <View style={styles.row}>
+
+
+
+        <View style={styles.year}>
+          {isMonthVisible && (
+            <View style={styles.year}>
+              <View style={styles.date}>
+                <WheelPicker
+                  data={monthdata} // Data to be used by the picker
+                  value={month} // Current value
+                  onValueChanging={handleMonthValueChanging} // Handle value change
+                  renderOverlay={() => null}
+                  itemTextStyle={styles.pickerItemText}
+                />
+              </View>
+              <View style={styles.buttonNotTouchable}></View>
             </View>
-            <View style={styles.buttonNotTouchable}></View>
-          </View>
-        )}
-        {!isYearVisible && (
-          <TouchableOpacity style={styles.button} onPress={handleYearButtonPress}>
-            <Text style={styles.buttonText}>{`${value}`}</Text>
-          </TouchableOpacity>
-        )}
+          )}
+          {!isMonthVisible && (
+            <TouchableOpacity style={styles.button} onPress={handleMonthButtonPress}>
+              <Text style={styles.buttonText}>{`${month}`}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+
+        <View style={styles.year}>
+          {isYearVisible && (
+            <View style={styles.year}>
+              <View style={styles.date}>
+                <WheelPicker
+                  data={yeardata} // Data to be used by the picker
+                  value={year} // Current value
+                  onValueChanging={handleYearValueChanging} // Handle value change
+                  renderOverlay={() => null}
+                  itemTextStyle={styles.pickerItemText}
+                />
+              </View>
+              <View style={styles.buttonNotTouchable}></View>
+            </View>
+          )}
+          {!isYearVisible && (
+            <TouchableOpacity style={styles.button} onPress={handleYearButtonPress}>
+              <Text style={styles.buttonText}>{`${year}`}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -92,6 +166,13 @@ const styles = StyleSheet.create({
     paddingLeft: 10,
     marginTop: 20,
     width: 200,
+  },
+  row: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '90%',
   },
   wrapper: {
     backgroundColor: 'transparent', // Invisible background

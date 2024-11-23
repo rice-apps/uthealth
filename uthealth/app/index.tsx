@@ -5,16 +5,13 @@ import { StyleSheet } from "react-native";
 
 export default function Index() {
   return (
-    <View style={{ flex: 1 }}>
-      <View style={styles.row}>
       <Dateofbirth />
-      </View>
-   </View>
   );
 }
 
 const styles = StyleSheet.create({
   row: {
+    flex: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
