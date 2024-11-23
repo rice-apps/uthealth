@@ -5,17 +5,26 @@ import { Dimensions, TouchableOpacity, TouchableWithoutFeedback, View, Text, But
 import WheelPicker from '@quidone/react-native-wheel-picker';
 
 export default function Dateofbirth() {
-  const monthdata = [...Array(32).keys()].map((index) => ({
+  const monthdata = [...Array(13).keys()].map((index) => ({
     value: index,
     label: index.toString(),
   }))
   monthdata.unshift({ value: 'Month', label: 'Month' })
 
-  const yeardata = [...Array(180).keys()].map((index) => ({
+  const currentYear = new Date().getFullYear(); // Get the current year
+  const yeardata = [...Array(currentYear - 1900 + 1).keys()].map((index) => ({
+    value: currentYear - index, // Start from the current year and subtract to get past years
+    label: (currentYear - index).toString(),
+  }));
+  
+  // Add a placeholder option for "Year"
+  yeardata.unshift({ value: 'Year', label: 'Year' });
+
+  const daydata = [...Array(32).keys()].map((index) => ({
     value: index,
     label: index.toString(),
   }))
-  yeardata.unshift({ value: 'Year', label: 'Year' })
+  daydata.unshift({ value: 'Day', label: 'Day' })
 
 
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
@@ -37,12 +46,18 @@ export default function Dateofbirth() {
 
   const handleYearButtonPress = () => {
     setYearIsVisible(true)
+    setDayIsVisible(false)
+    setMonthIsVisible(false)
   };
   const handleMonthButtonPress = () => {
     setMonthIsVisible(true)
+    setYearIsVisible(false)
+    setDayIsVisible(false)
   };
   const handleDayButtonPress = () => {
     setDayIsVisible(true)
+    setMonthIsVisible(false)
+    setYearIsVisible(false)
   };
 
   const handleMonthValueChanging = ({ item: { value } }) => {
@@ -72,6 +87,7 @@ export default function Dateofbirth() {
   const handleTapOutside = () => {
     setMonth(monthValueRef.current)
     setYear(yearValueRef.current)
+    setDay(dayValueRef.current)
     console.log("pressed")
     setYearIsVisible(false)
     setDayIsVisible(false)
@@ -84,7 +100,7 @@ export default function Dateofbirth() {
       </TouchableWithoutFeedback>
       <Text style={styles.title}>Date of Birth</Text>
       <View style={styles.row}>
-
+        <View></View>
 
 
         <View style={styles.year}>
@@ -108,8 +124,31 @@ export default function Dateofbirth() {
             </TouchableOpacity>
           )}
         </View>
-
-
+       <Text style={styles.buttonText}>/</Text>
+        
+        <View style={styles.year}>
+          {isDayVisible && (
+            <View style={styles.year}>
+              <View style={styles.date}>
+                <WheelPicker
+                  data={daydata} // Data to be used by the picker
+                  value={day} // Current value
+                  onValueChanging={handleDayValueChanging} // Handle value change
+                  renderOverlay={() => null}
+                  itemTextStyle={styles.pickerItemText}
+                />
+              </View>
+              <View style={styles.buttonNotTouchable}></View>
+            </View>
+          )}
+          {!isDayVisible && (
+            <TouchableOpacity style={styles.button} onPress={handleDayButtonPress}>
+              <Text style={styles.buttonText}>{`${day}`}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+       <Text style={styles.buttonText}>/</Text>
+        
         <View style={styles.year}>
           {isYearVisible && (
             <View style={styles.year}>
@@ -151,7 +190,6 @@ const styles = StyleSheet.create({
     textAlign: "center",
     width: 254,
     paddingTop: 67,
-    paddingBottom: 30
   },
   date: {
     position: 'absolute',
@@ -169,9 +207,9 @@ const styles = StyleSheet.create({
   },
   row: {
     flex: 1,
-    flexDirection: "row",
+    alignItems: 'center', // Ensures vertical centering of the scroll wheels
+    flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     width: '90%',
   },
   wrapper: {
@@ -184,7 +222,7 @@ const styles = StyleSheet.create({
     alignItems: 'center', // Center text horizontally
     justifyContent: 'center',
     borderWidth: 2, // Border width
-    borderColor: '#844016', // Border color (e.g., white)
+    borderColor: '#327689', // Border color (e.g., white)
     width: 100,
     height: 50,
   },
@@ -193,7 +231,7 @@ const styles = StyleSheet.create({
     borderRadius: 50, // Rounded corners
     alignItems: 'center', // Center text horizontally
     borderWidth: 2, // Border width
-    borderColor: '#844016', // Border color (e.g., white)
+    borderColor: '#327689', // Border color (e.g., white)
     width: 100,
     height: 50,
     pointerEvents: 'none'
@@ -201,7 +239,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontWeight: '400', // Set font weight
     fontSize: 20, // Set font size
-    color: '#844016', // White text color
+    color: '#327689', // White text color
     fontFamily: 'Proxima Nova',
   },
   year: {
@@ -209,7 +247,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center'
   },
   pickerItemText: {
-    color: '#844016',
+    color: '#327689',
     fontWeight: '400', // Set font weight
     fontSize: 20,
     fontFamily: 'Space Mono Regular',
