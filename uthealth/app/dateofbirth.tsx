@@ -1,10 +1,10 @@
 import { StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Dimensions, TouchableOpacity, TouchableWithoutFeedback, View, Text, Button } from "react-native";
 import WheelPicker from '@quidone/react-native-wheel-picker';
 
-export default function WeightScreen() {
+export default function Dateofbirth() {
   const data = [...Array(32).keys()].map((index) => ({
     value: index,
     label: index.toString(),
@@ -12,36 +12,44 @@ export default function WeightScreen() {
   data.unshift({ value: 'Month', label: 'Month' })
   const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
   const [value, setValue] = useState('Month');
-  const [isYearVisible, setYearIsVisible] = useState(true);
+  const [isYearVisible, setYearIsVisible] = useState(false);
+  const valueRef = useRef(value);
   const handleValueChanged = ({ item: { value } }) => {
+    valueRef.current = value;
     console.log(value)
-    setValue(value);
   };
   const handleYearButtonPress = () => {
     setYearIsVisible(true)
   };
+  const handleValueEnd = ({ item: { value } }) => {
+    setValue(value)
+  }
   const handleTapOutside = () => {
+    setValue(valueRef.current)
+    console.log("pressed")
     setYearIsVisible(false)
   }
   return (
     <View style={styles.container}>
-      <TouchableWithoutFeedback onPress={handleTapOutside}>
+      <TouchableWithoutFeedback onPress={handleTapOutside} accessible={false}>
         <View style={[styles.wrapper, { width, height }]} onLayout={() => setSize(Dimensions.get('window'))} />
       </TouchableWithoutFeedback>
+
       <Text style={styles.title}>Date of Birth</Text>
       <View style={styles.year}>
         {isYearVisible && (
           <View style={styles.year}>
-          <View style={styles.date}>
-            <WheelPicker
-              data={data} // Data to be used by the picker
-              value={value} // Current value
-              onValueChanged={handleValueChanged} // Handle value change
-              renderOverlay={() => null}
-              itemTextStyle={styles.pickerItemText}
-            />
-          </View>
-          <View style={styles.buttonNotTouchable}></View>
+            <View style={styles.date}>
+              <WheelPicker
+                data={data} // Data to be used by the picker
+                value={value} // Current value
+                onValueChanging={handleValueChanged} // Handle value change
+                onValueChanged={handleValueEnd}
+                renderOverlay={() => null}
+                itemTextStyle={styles.pickerItemText}
+              />
+            </View>
+            <View style={styles.buttonNotTouchable}></View>
           </View>
         )}
         {!isYearVisible && (
@@ -87,7 +95,6 @@ const styles = StyleSheet.create({
   },
   wrapper: {
     backgroundColor: 'transparent', // Invisible background
-    opacity: 0, // Makes the component invisible
     position: 'absolute', // Optional: keeps it in place
   },
   button: {
