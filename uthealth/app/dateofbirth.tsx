@@ -48,16 +48,28 @@ export default function Dateofbirth() {
     setYearIsVisible(true)
     setDayIsVisible(false)
     setMonthIsVisible(false)
+
+    setMonth(monthValueRef.current)
+    setYear(yearValueRef.current)
+    setDay(dayValueRef.current)
   };
   const handleMonthButtonPress = () => {
     setMonthIsVisible(true)
     setYearIsVisible(false)
     setDayIsVisible(false)
+
+    setMonth(monthValueRef.current)
+    setYear(yearValueRef.current)
+    setDay(dayValueRef.current)
   };
   const handleDayButtonPress = () => {
     setDayIsVisible(true)
     setMonthIsVisible(false)
     setYearIsVisible(false)
+
+    setMonth(monthValueRef.current)
+    setYear(yearValueRef.current)
+    setDay(dayValueRef.current)
   };
 
   const handleMonthValueChanging = ({ item: { value } }) => {
@@ -101,7 +113,7 @@ export default function Dateofbirth() {
       <Text style={styles.title}>Date of Birth</Text>
       <View style={styles.row}>
         <View></View>
-
+        <View></View>
 
         <View style={styles.year}>
           {isMonthVisible && (
@@ -171,6 +183,11 @@ export default function Dateofbirth() {
           )}
         </View>
       </View>
+      <View style={styles.container1}>
+      <TouchableOpacity style={styles.button1}>
+        <Text style={styles.buttonText1}>Continue</Text>
+      </TouchableOpacity>
+    </View>
     </View>
   );
 }
@@ -181,7 +198,11 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: "white",
     alignItems: "center",
+    justifyContent: "flex-start",
     position: 'relative',
+  },
+  container1: {
+    paddingTop: 287
   },
   title: {
     fontSize: 24,
@@ -192,10 +213,18 @@ const styles = StyleSheet.create({
     paddingTop: 67,
   },
   date: {
-    position: 'absolute',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    padding: 10,
+    position: 'absolute', // Free positioning
+    top: '50%', // Position from the top
+    left: '50%', // Position from the left
+    transform: [
+      { translateX: -50 }, // Move back by half the width
+      { translateY: -50 }, // Move back by half the height
+    ],
+    width: 100, // Component's width
+    height: 100, // Component's height
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 50,
   },
   input: {
     height: 40,
@@ -205,11 +234,15 @@ const styles = StyleSheet.create({
     marginTop: 20,
     width: 200,
   },
+  column: {
+    alignItems: "center"
+  },
   row: {
-    flex: 1,
-    alignItems: 'center', // Ensures vertical centering of the scroll wheels
+    paddingTop: 161,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    top: 50,
     width: '90%',
   },
   wrapper: {
@@ -225,6 +258,16 @@ const styles = StyleSheet.create({
     borderColor: '#327689', // Border color (e.g., white)
     width: 100,
     height: 50,
+  },
+  button1: {
+    backgroundColor: '#327689',
+    borderRadius: 50, // Rounded corners
+    alignItems: 'center', // Center text horizontally
+    justifyContent: 'center',
+    borderWidth: 2, // Border width
+    borderColor: '#1E4F5D', // Border color (e.g., white)
+    width: 295,
+    height: 65,
   },
   buttonNotTouchable: {
     backgroundColor: 'transparent',
@@ -242,9 +285,16 @@ const styles = StyleSheet.create({
     color: '#327689', // White text color
     fontFamily: 'Proxima Nova',
   },
+  buttonText1: {
+    fontWeight: '400', // Set font weight
+    fontSize: 20, // Set font size
+    width: 86,
+    height: 25,
+    color: '#FFFFFF', // White text color
+    fontFamily: 'Proxima Nova',
+  },
   year: {
     alignItems: 'center',
-    justifyContent: 'center'
   },
   pickerItemText: {
     color: '#327689',
