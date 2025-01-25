@@ -1,10 +1,7 @@
-import { Text, View } from "react-native";
-import "../global.css"
+import { Text, View } from 'react-native'
+import '../global.css'
+import WeightScreen from './weight-input'
 
 export default function Index() {
-  return (
-    <View className="items-center">
-      <Text className="text-red-500">Edit app/index.tsx to edit this screen.</Text>
-    </View>
-  );
+    return <WeightScreen />
 }
