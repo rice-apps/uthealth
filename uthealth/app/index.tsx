@@ -1,10 +1,17 @@
-import { Text, View } from 'react-native'
-import ScrollButton from './scrollbutton'
-import { StyleSheet } from 'react-native'
-import { DobInput } from './dobInput'
+import { UserProvider } from "@/user/UserContext";
+import 'react-native-gesture-handler'
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import '../global.css'
+import HomeScreen from './(tabs)'
 
 export default function Index() {
-    return <DobInput />
+  return (
+    <GestureHandlerRootView style={{flex: 1}}>
+      <UserProvider>
+        <HomeScreen />
+      </UserProvider>
+    </GestureHandlerRootView>
+  );
 }
 
 const styles = StyleSheet.create({
