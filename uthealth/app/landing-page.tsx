@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
+import { useNavigation } from '@react-navigation/native';
 import "../global.css";
 
 const RANGE = 20;
@@ -37,7 +38,8 @@ interface ActivityModalProps {
   onAddActivity: (activity: Omit<Activity, 'id'>) => void;
   selectedDate: Date;
 }
-//Choosing Activity
+
+// ActivityModal Component
 const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddActivity, selectedDate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedExercise, setSelectedExercise] = useState<string>("");
@@ -79,7 +81,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
 
   const handleCategorySelect = (categoryId: string) => {
     setSelectedCategory(categoryId);
-    setSelectedExercise(""); // Reset exercise selection
+    setSelectedExercise("");
   };
 
   return (
@@ -99,7 +101,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </TouchableOpacity>
           </View>
 
-          {/*Selecting Category*/}
+          {/* Category Selection */}
           <View className="mb-6">
             <Text className="text-gray-600 mb-3">Choose Category</Text>
             <View className="flex-row gap-3">
@@ -130,13 +132,11 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </View>
           </View>
 
-          {/* Exercise Selection*/}
+          {/* Exercise Selection */}
           {selectedCategory && (
             <View className="mb-6">
               <Text className="text-gray-600 mb-3">Choose Exercise</Text>
-              
-              {/* Scrollable for Strength Training*/}
-              {selectedCategory === "1" && (
+              {selectedCategory === "1" ? (
                 <ScrollView className="max-h-48">
                   <View className="space-y-2">
                     {strengthExercises.map((exercise) => (
@@ -160,10 +160,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
                     ))}
                   </View>
                 </ScrollView>
-              )}
-
-              {/*Select exercise for Aerobics*/}
-              {selectedCategory === "2" && (
+              ) : (
                 <View className="space-y-2">
                   {aerobicExercises.map((exercise) => (
                     <TouchableOpacity
@@ -189,7 +186,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </View>
           )}
 
-          {/*Select time*/}
+          {/* Duration Selection */}
           {selectedExercise && (
             <View className="mb-6">
               <Text className="text-gray-600 mb-3">Select Duration</Text>
@@ -217,7 +214,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </View>
           )}
 
-          {/*Timer*/}
+          {/* Timer Section */}
           {selectedDuration && (
             <View className="flex-row items-center mb-6">
               <Icon name="timer" size={24} color="#512B81" />
@@ -254,7 +251,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
   );
 };
 
-// Helper function to generate surrounding days
+// Helper function
 const generateSurroundingDates = (centerDate: Date, range = RANGE): DateItem[] => {
   const dates = [];
   for (let i = -range; i <= range; i++) {
@@ -271,6 +268,7 @@ const generateSurroundingDates = (centerDate: Date, range = RANGE): DateItem[] =
 };
 
 const LandingPage: React.FC = () => {
+  const navigation = useNavigation();
   const [activityToDelete, setActivityToDelete] = useState<Activity | null>(null);
   const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false);
   const [isActivityModalVisible, setActivityModalVisible] = useState<boolean>(false);
@@ -281,17 +279,15 @@ const LandingPage: React.FC = () => {
   const flatListRef = useRef<FlatList<DateItem>>(null);
   const middleIndex = RANGE;
 
-  // Initial scroll to center
   useEffect(() => {
-    // Only scroll on initial mount
     if (flatListRef.current) {
       flatListRef.current.scrollToIndex({
         index: middleIndex,
         animated: false,
-        viewPosition: 0.5, // Center the selected date
+        viewPosition: 0.5,
       });
     }
-  }, []); // Empty dependency array for initial mount only
+  }, []);
 
   const handleDeleteActivity = () => {
     if (activityToDelete) {
@@ -316,7 +312,6 @@ const LandingPage: React.FC = () => {
     setDates(newDates);
     setSelectedDate(date);
     
-    // Scroll to middle after a brief delay to ensure dates are updated
     setTimeout(() => {
       if (flatListRef.current) {
         flatListRef.current.scrollToIndex({
@@ -332,7 +327,6 @@ const LandingPage: React.FC = () => {
 
   const handleCardSelect = (fullDate: Date) => {
     setSelectedDate(fullDate);
-    // Remove date regeneration to keep position static
   };
 
   const getItemLayout = (_data: any, index: number) => ({
@@ -341,12 +335,10 @@ const LandingPage: React.FC = () => {
     index,
   });
 
-  // Filter activities for selected date
   const todayActivities = activities.filter(
     activity => activity.date.toDateString() === selectedDate.toDateString()
   );
 
-  // Render calendar card
   const renderCalendarCard = ({ item }: { item: DateItem }) => {
     const isSelected = item.fullDate.toDateString() === selectedDate.toDateString();
     return (
@@ -414,35 +406,6 @@ const LandingPage: React.FC = () => {
             />
           </View>
 
-          {/* Delete Confirmation Modal */}
-          <Modal
-            animationType="fade"
-            transparent={true}
-            visible={!!activityToDelete}
-            onRequestClose={() => setActivityToDelete(null)}
-          >
-            <View className="flex-1 justify-center items-center bg-black/50">
-              <View className="bg-white rounded-2xl p-6 w-11/12 max-w-sm">
-                <Text className="text-xl font-semibold mb-4">Delete Activity</Text>
-                <Text className="text-gray-600 mb-6">Are you sure you want to delete this activity?</Text>
-                <View className="flex-row justify-end space-x-3">
-                  <TouchableOpacity
-                    onPress={() => setActivityToDelete(null)}
-                    className="px-4 py-2 rounded-lg bg-gray-100"
-                  >
-                    <Text className="text-gray-600">Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={handleDeleteActivity}
-                    className="px-4 py-2 rounded-lg bg-red-500"
-                  >
-                    <Text className="text-white">Delete</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            </View>
-          </Modal>
-
           {/* Activities Section */}
           <View className="px-4 mt-6">
             <Text className="text-xl font-bold mb-4">Today's Activities</Text>
@@ -502,9 +465,9 @@ const LandingPage: React.FC = () => {
               <TouchableOpacity>
                 <Icon name="home" size={28} color="#512B81" />
               </TouchableOpacity>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Weight')}>
                 <Icon name="fitness-center" size={28} color="#666" />
-              </TouchableOpacity>
+                </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => setActivityModalVisible(true)}
                 className="bg-[#512B81] p-4 rounded-full -mt-8"
@@ -521,7 +484,36 @@ const LandingPage: React.FC = () => {
           </SafeAreaView>
         </View>
 
-        {/* Modals */}
+        {/* Delete Confirmation Modal */}
+        <Modal
+          animationType="fade"
+          transparent={true}
+          visible={!!activityToDelete}
+          onRequestClose={() => setActivityToDelete(null)}
+        >
+          <View className="flex-1 justify-center items-center bg-black/50">
+            <View className="bg-white rounded-2xl p-6 w-11/12 max-w-sm">
+              <Text className="text-xl font-semibold mb-4">Delete Activity</Text>
+              <Text className="text-gray-600 mb-6">Are you sure you want to delete this activity?</Text>
+              <View className="flex-row justify-end space-x-3">
+                <TouchableOpacity
+                  onPress={() => setActivityToDelete(null)}
+                  className="px-4 py-2 rounded-lg bg-gray-100"
+                >
+                  <Text className="text-gray-600">Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleDeleteActivity}
+                  className="px-4 py-2 rounded-lg bg-red-500"
+                >
+                  <Text className="text-white">Delete</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Date Picker Modal */}
         <DateTimePickerModal
           isVisible={isDatePickerVisible}
           mode="date"
@@ -530,6 +522,7 @@ const LandingPage: React.FC = () => {
           display="inline"
         />
 
+        {/* Activity Modal */}
         <ActivityModal
           visible={isActivityModalVisible}
           onClose={() => setActivityModalVisible(false)}
@@ -540,4 +533,5 @@ const LandingPage: React.FC = () => {
     </SafeAreaView>
   );
 };
+
 export default LandingPage;
