@@ -13,12 +13,10 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import "../global.css";
 
-// Constants
 const RANGE = 20;
 const ITEM_WIDTH = 64;
 const ITEM_MARGIN_HORIZONTAL = 8;
 
-// Types
 interface DateItem {
   id: string;
   dayName: string;
@@ -39,36 +37,49 @@ interface ActivityModalProps {
   onAddActivity: (activity: Omit<Activity, 'id'>) => void;
   selectedDate: Date;
 }
-
-// Activity Modal Component
+//Choosing Activity
 const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddActivity, selectedDate }) => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedExercise, setSelectedExercise] = useState<string>("");
   const [selectedDuration, setSelectedDuration] = useState<string>("");
-  const [showExercises, setShowExercises] = useState(false);
 
   const categories = [
-    { id: "1", name: "Running", icon: "directions-run" },
-    { id: "2", name: "Aerobics", icon: "fitness-center" },
+    { id: "1", name: "Strength Training", icon: "fitness-center" },
+    { id: "2", name: "Aerobics", icon: "directions-run" },
   ];
-
-  const exercises = ["Walk", "Run"];
+  
+  const strengthExercises = [
+    "Bench Press",
+    "Squats",
+    "Deadlifts",
+    "Shoulder Press",
+    "Bicep Curls"
+  ];
+  
+  const aerobicExercises = ["Walk", "Run"];
   const durations = ["5 m", "15 m", "30 m", "45 m", "60 m", "Other"];
 
   const handleAdd = () => {
-    if (selectedCategory && selectedExercise && selectedDuration) {
+    if (selectedCategory) {
       const category = categories.find(c => c.id === selectedCategory)?.name || '';
-      onAddActivity({
-        name: `${selectedExercise} - ${selectedDuration}`,
-        category,
-        date: selectedDate,
-      });
-      setSelectedCategory("");
-      setSelectedExercise("");
-      setSelectedDuration("");
-      setShowExercises(false);
-      onClose();
+      
+      if (selectedExercise && selectedDuration) {
+        onAddActivity({
+          name: `${selectedExercise} - ${selectedDuration}`,
+          category,
+          date: selectedDate,
+        });
+        setSelectedCategory("");
+        setSelectedExercise("");
+        setSelectedDuration("");
+        onClose();
+      }
     }
+  };
+
+  const handleCategorySelect = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+    setSelectedExercise(""); // Reset exercise selection
   };
 
   return (
@@ -88,17 +99,14 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </TouchableOpacity>
           </View>
 
-          {/* Category Selection */}
+          {/*Selecting Category*/}
           <View className="mb-6">
             <Text className="text-gray-600 mb-3">Choose Category</Text>
             <View className="flex-row gap-3">
               {categories.map((category) => (
                 <TouchableOpacity
                   key={category.id}
-                  onPress={() => {
-                    setSelectedCategory(category.id);
-                    setShowExercises(true);
-                  }}
+                  onPress={() => handleCategorySelect(category.id)}
                   className={`flex-1 flex-row items-center justify-center px-4 py-3 rounded-full border ${
                     selectedCategory === category.id
                       ? "bg-[#512B81] border-[#512B81]"
@@ -122,35 +130,66 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </View>
           </View>
 
-          {/* Exercise Selection */}
+          {/* Exercise Selection*/}
           {selectedCategory && (
             <View className="mb-6">
               <Text className="text-gray-600 mb-3">Choose Exercise</Text>
-              <View className="space-y-2">
-                {exercises.map((exercise) => (
-                  <TouchableOpacity
-                    key={exercise}
-                    onPress={() => setSelectedExercise(exercise)}
-                    className={`p-3 rounded-xl border ${
-                      selectedExercise === exercise
-                        ? "bg-[#512B81] border-[#512B81]"
-                        : "border-gray-200"
-                    }`}
-                  >
-                    <Text 
-                      className={`text-center font-medium ${
-                        selectedExercise === exercise ? "text-white" : "text-gray-700"
+              
+              {/* Scrollable for Strength Training*/}
+              {selectedCategory === "1" && (
+                <ScrollView className="max-h-48">
+                  <View className="space-y-2">
+                    {strengthExercises.map((exercise) => (
+                      <TouchableOpacity
+                        key={exercise}
+                        onPress={() => setSelectedExercise(exercise)}
+                        className={`p-3 rounded-xl border ${
+                          selectedExercise === exercise
+                            ? "bg-[#512B81] border-[#512B81]"
+                            : "border-gray-200"
+                        }`}
+                      >
+                        <Text 
+                          className={`text-center font-medium ${
+                            selectedExercise === exercise ? "text-white" : "text-gray-700"
+                          }`}
+                        >
+                          {exercise}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </ScrollView>
+              )}
+
+              {/*Select exercise for Aerobics*/}
+              {selectedCategory === "2" && (
+                <View className="space-y-2">
+                  {aerobicExercises.map((exercise) => (
+                    <TouchableOpacity
+                      key={exercise}
+                      onPress={() => setSelectedExercise(exercise)}
+                      className={`p-3 rounded-xl border ${
+                        selectedExercise === exercise
+                          ? "bg-[#512B81] border-[#512B81]"
+                          : "border-gray-200"
                       }`}
                     >
-                      {exercise}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
+                      <Text 
+                        className={`text-center font-medium ${
+                          selectedExercise === exercise ? "text-white" : "text-gray-700"
+                        }`}
+                      >
+                        {exercise}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
             </View>
           )}
 
-          {/* Duration Selection */}
+          {/*Select time*/}
           {selectedExercise && (
             <View className="mb-6">
               <Text className="text-gray-600 mb-3">Select Duration</Text>
@@ -178,7 +217,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
             </View>
           )}
 
-          {/* Timer Option */}
+          {/*Timer*/}
           {selectedDuration && (
             <View className="flex-row items-center mb-6">
               <Icon name="timer" size={24} color="#512B81" />
