@@ -13,3 +13,13 @@ export default function Index() {
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+    row: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        width: '90%',
+    },
+})
