@@ -4,7 +4,7 @@
  - Some offline caching
  - Data security is not considered
  - Multiple users modfiying the user structure on the server at once is not a priority
- - Allow some parts of the app to be used offline (e.g. practice)
+ - Allow some parts of the app to be used offline (e.g. practice);
  */
 
 export class User {
