@@ -1,8 +1,15 @@
-import { Text, View } from 'react-native'
+import { UserProvider } from "@/user/UserContext";
+import 'react-native-gesture-handler'
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import '../global.css'
-import WeightScreen from './weight-input'
 import HomeScreen from './(tabs)'
 
 export default function Index() {
-    return <HomeScreen />
+  return (
+    <GestureHandlerRootView style={{flex: 1}}>
+      <UserProvider>
+        <HomeScreen />
+      </UserProvider>
+    </GestureHandlerRootView>
+  );
 }
