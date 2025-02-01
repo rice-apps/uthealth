@@ -23,7 +23,7 @@ const WorkoutPage: React.FC = () => {
   }, []);
 
   return (
-    <View className="flex-1 bg-blue-900">
+    <View className="flex-1 bg-[#512B81]/90"> {/* Subtle purple background */}
       {/* Video Container Moved Lower */}
       <View className="absolute top-40 left-0 right-0 h-1/2"> {/* Adjusted top position */}
         <YoutubePlayer
@@ -86,7 +86,7 @@ const WorkoutPage: React.FC = () => {
             onPress={() => setPlaying(!playing)}
             className="bg-white rounded-full py-4 px-8 items-center"
           >
-            <Text className="text-blue-900 text-center text-lg font-semibold">
+            <Text className="text-[#512B81] text-center text-lg font-semibold"> {/* Purple text color */}
               {playing ? 'Pause Workout' : 'Start Workout'}
             </Text>
           </TouchableOpacity>

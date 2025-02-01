@@ -465,7 +465,7 @@ const LandingPage: React.FC = () => {
               <TouchableOpacity>
                 <Icon name="home" size={28} color="#512B81" />
               </TouchableOpacity>
-              <TouchableOpacity onPress={() => navigation.navigate('Weight')}>
+              <TouchableOpacity onPress={() => navigation.navigate("WorkoutPage")}>
                 <Icon name="fitness-center" size={28} color="#666" />
                 </TouchableOpacity>
               <TouchableOpacity
