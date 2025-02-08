@@ -15,7 +15,7 @@ type PickerItem = {
     value: number
 }
 
-export const DobInput = () => {
+const DobInput = () => {
     const dayData: PickerItem[] = [...Array(32).keys()].map((index) => {
         return {
             label: index.toString(),
@@ -321,3 +321,5 @@ const styles = StyleSheet.create({
         fontFamily: 'Space Mono Regular', // Ensure this font is available
     },
 })
+
+export default DobInput
