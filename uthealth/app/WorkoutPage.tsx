@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 import {
     View,
     Text,
@@ -6,24 +6,93 @@ import {
     SafeAreaView,
     Dimensions,
     StyleSheet,
+    ActivityIndicator,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useNavigation } from '@react-navigation/native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { LinearGradient } from 'expo-linear-gradient'
+import { supabase } from './lib/supabase' // You'll need to create this
+import { Exercise } from './types/Exercise'
+import { WorkoutPageProps } from './types/navigation'
+import { NativeStackScreenProps } from '@react-navigation/native-stack'
+import { RootStackParamList } from './types/navigation'
 
 const { width, height } = Dimensions.get('window')
 
+type Props = NativeStackScreenProps<RootStackParamList, 'WorkoutPage'>
+
 const WorkoutPage: React.FC = () => {
-    const navigation = useNavigation()
+    const router = useRouter()
+    const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>()
+
     const [playing, setPlaying] = useState(true)
     const [isPressed, setIsPressed] = useState(false)
+    const [exercise, setExercise] = useState<Exercise | null>(null)
+    const [loading, setLoading] = useState(true)
+
+    useEffect(() => {
+        if (exerciseId) {
+            fetchExerciseDetails(Number(exerciseId))
+        }
+    }, [exerciseId])
+
+    const fetchExerciseDetails = async (id: number) => {
+        try {
+            const { data, error } = await supabase
+                .from('exercises')
+                .select('*')
+                .eq('id', id)
+                .single()
+
+            if (error) {
+                if (error.code === 'PGRST116') {
+                    console.error(`Exercise with ID ${id} not found`)
+                    // You could show a user-friendly error message here
+                } else {
+                    console.error('Error fetching exercise:', error)
+                }
+                return
+            }
+
+            setExercise(data)
+        } catch (error) {
+            console.error('Error fetching exercise:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
 
     const onStateChange = useCallback((state: string) => {
         if (state === 'ended') {
             setPlaying(false)
         }
     }, [])
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#337689" />
+            </View>
+        )
+    }
+
+    if (!exercise) {
+        return (
+            <View style={styles.errorContainer}>
+                <Icon name="error-outline" size={48} color="#FF4444" />
+                <Text style={styles.errorText}>
+                    Exercise not found. Please try another exercise.
+                </Text>
+                <TouchableOpacity
+                    onPress={() => router.back()}
+                    style={styles.errorButton}
+                >
+                    <Text style={styles.errorButtonText}>Go Back</Text>
+                </TouchableOpacity>
+            </View>
+        )
+    }
 
     return (
         <LinearGradient
@@ -38,7 +107,7 @@ const WorkoutPage: React.FC = () => {
                     height={height * 0.4}
                     width={width}
                     play={playing}
-                    videoId="dtnMrfS9aX8"
+                    videoId={exercise.video_id || 'dtnMrfS9aX8'} // Fallback video ID
                     onChangeState={onStateChange}
                     forceAndroidAutoplay={true}
                     initialPlayerParams={{
@@ -54,7 +123,7 @@ const WorkoutPage: React.FC = () => {
             <SafeAreaView style={styles.contentContainer}>
                 {/* Back Button */}
                 <TouchableOpacity
-                    onPress={() => navigation.goBack()}
+                    onPress={() => router.back()}
                     style={styles.backButton}
                 >
                     <Icon name="arrow-back" size={24} color="white" />
@@ -64,29 +133,27 @@ const WorkoutPage: React.FC = () => {
                 <View style={styles.contentWrapper}>
                     {/* Title Section */}
                     <View style={styles.titleSection}>
-                        <Text style={styles.title}>Hip Flexion</Text>
-                        <Text style={styles.instructor}>
-                            With instructor name
-                        </Text>
+                        <Text style={styles.title}>{exercise.name}</Text>
+                        <Text style={styles.instructor}>{exercise.type}</Text>
                     </View>
 
                     {/* Info Section */}
                     <View style={styles.infoSection}>
                         <View style={styles.infoRow}>
-                            <Icon name="schedule" size={24} color="#337689" />
+                            <Icon name="label" size={24} color="#337689" />
                             <Text style={styles.infoText}>
-                                20 mins, Beginner
+                                {exercise.tags.join(', ')}
                             </Text>
                         </View>
 
                         <View style={styles.infoRow}>
                             <Icon
-                                name="fitness-center"
+                                name="description"
                                 size={24}
                                 color="#337689"
                             />
                             <Text style={styles.infoText}>
-                                Strength: back, arms
+                                {exercise.description}
                             </Text>
                         </View>
                     </View>
@@ -105,7 +172,7 @@ const WorkoutPage: React.FC = () => {
                     >
                         <View style={styles.buttonContent}>
                             <Text style={styles.buttonText}>
-                                {playing ? 'Pause Workout' : 'Start Workout'}
+                                {playing ? 'Pause Exercise' : 'Start Exercise'}
                             </Text>
                         </View>
                     </TouchableOpacity>
@@ -191,6 +258,37 @@ const styles = StyleSheet.create({
     buttonText: {
         color: 'white',
         fontSize: 18,
+        fontWeight: '600',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    errorContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+        padding: 20,
+    },
+    errorText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        marginTop: 16,
+        marginBottom: 24,
+    },
+    errorButton: {
+        backgroundColor: '#337689',
+        paddingHorizontal: 24,
+        paddingVertical: 12,
+        borderRadius: 8,
+    },
+    errorButtonText: {
+        color: '#fff',
+        fontSize: 16,
         fontWeight: '600',
     },
 })
