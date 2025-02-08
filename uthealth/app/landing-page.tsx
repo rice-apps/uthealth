@@ -451,7 +451,9 @@ const LandingPage: React.FC = () => {
           {/* Get Started Section */}
           <View className="px-4 mt-6 mb-20">
             <Text className="text-lg font-semibold">Get Started</Text>
-            <TouchableOpacity className="flex-row items-center justify-between bg-white rounded-lg py-4 px-4 mt-2 shadow-sm">
+            <TouchableOpacity
+              onPress = {() => navigation.navigate('Workout Plan')}
+              className="flex-row items-center justify-between bg-white rounded-lg py-4 px-4 mt-2 shadow-sm">
               <Text className="text-lg">Week 1</Text>
               <Icon name="arrow-forward" size={24} color="#512B81" />
             </TouchableOpacity>
