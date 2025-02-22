@@ -3,8 +3,23 @@ import { Text } from "react-native";
 
 export default function RootLayout() {
   return (
-    <Stack>
-      <Stack.Screen name="index" />
+    <Stack
+      screenOptions={{
+        headerShown: false, // Ensure header is hidden for all screens
+      }}
+    >
+      <Stack.Screen 
+        name="index"
+        options={{
+          headerShown: false, 
+        }}
+      />
+      <Stack.Screen 
+        name="(tabs)/_layout"
+        options={{
+          headerShown: false, 
+        }}
+      />
     </Stack>
   );
 }
