@@ -105,6 +105,7 @@ const TimerScreen = () => {
         setMinutesLeft(Math.floor(new_time / 6000));
         setSecondsLeft(Math.floor((timerDuration % 6000) / 100));
         setCentisecondsLeft(new_time % 100);
+        setIsRunning(false)
     }
 
     const handleTouchablePress = () => {
