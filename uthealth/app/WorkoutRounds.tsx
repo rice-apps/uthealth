@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback } from 'react';
 import {
     View,
     Text,
@@ -6,26 +6,55 @@ import {
     SafeAreaView,
     Dimensions,
     StyleSheet,
-} from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useNavigation } from '@react-navigation/native'
-import YoutubePlayer from 'react-native-youtube-iframe'
-import { LinearGradient } from 'expo-linear-gradient'
+    Animated,
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useNavigation } from '@react-navigation/native';
+import YoutubePlayer from 'react-native-youtube-iframe';
+import { LinearGradient } from 'expo-linear-gradient';
 
-const { width, height } = Dimensions.get('window')
+const { width, height } = Dimensions.get('window');
 
 const WorkoutRounds: React.FC = () => {
-    const navigation = useNavigation()
-    const [playing, setPlaying] = useState(true)
-    const [isPressed, setIsPressed] = useState(false)
-    const [unchecked, setUnchecked] = useState(true)
-    const [checked, setChecked] = useState(false)
+    const navigation = useNavigation();
+    const [playing, setPlaying] = useState(true);
+    const [selectedOptions, setSelectedOptions] = useState<number[]>([]); // Allow multiple selections
 
     const onStateChange = useCallback((state: string) => {
         if (state === 'ended') {
-            setPlaying(false)
+            setPlaying(false);
         }
-    }, [])
+    }, []);
+
+    const options = ['Lorem Ipsum', 'Lorem Ipsum', 'Lorem Ipsum']; // Only 3 options
+
+    // Toggle selection for multiple options
+    const toggleOption = (index: number) => {
+        setSelectedOptions((prevSelected) =>
+            prevSelected.includes(index)
+                ? prevSelected.filter((i) => i !== index) // Deselect if already selected
+                : [...prevSelected, index] // Add to selection if not selected
+        );
+    };
+
+    const [progress] = useState(new Animated.Value(0));
+    const allOptionsSelected = selectedOptions.length === options.length;
+
+        // Update progress bar based on the number of selected options
+        const updateProgress = () => {
+            const progressValue = selectedOptions.length / options.length;
+            Animated.timing(progress, {
+                toValue: progressValue,
+                duration: 500,
+                useNativeDriver: false,
+            }).start();
+        };
+    
+        // Watch for changes in selected options
+        React.useEffect(() => {
+            updateProgress();
+        }, [selectedOptions]);
+    
 
     return (
         <LinearGradient
@@ -34,6 +63,14 @@ const WorkoutRounds: React.FC = () => {
             end={{ x: 0, y: 0.6 }}
             style={styles.container}
         >
+            {/* Back Button */}
+            <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+            >
+                <Icon name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+
             {/* Video Container */}
             <View style={styles.videoContainer}>
                 <YoutubePlayer
@@ -52,66 +89,97 @@ const WorkoutRounds: React.FC = () => {
                 />
             </View>
 
+
             {/* Content Container */}
             <SafeAreaView style={styles.contentContainer}>
-                {/* Back Button */}
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    style={styles.backButton}
-                >
-                    <Icon name="arrow-back" size={24} color="#337689" />
-                </TouchableOpacity>
-
-                {/* Content */}
-                <View style={styles.contentWrapper}>
-                    {/* Title Section */}
-                    <TouchableOpacity
-                        onPress={() => {
-                            if (checked == false){
-                                setUnchecked(!checked)
-                                setChecked(true)
-                        }
-                        if (checked == true){
-                            setUnchecked(checked)
-                            setChecked(false)
-                    }
-
-                        }}
+                {/* Progress Bar */}
+                <View style={styles.progressBarContainer}>
+                    <Animated.View
                         style={[
-                            styles.task,
-                            checked && styles.taskDone,
+                            styles.progressBarFill,
+                            { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
                         ]}
-                    >
-                        <View style={styles.buttonContent}>
-                            <Text style={styles.buttonText}>
-                                {playing ? 'Pause Workout' : 'Start Workout'}
+                    />
+                </View>
+
+                {/* Options List */}
+                <View style={styles.optionList}>
+                    {options.map((option, index) => (
+                        <TouchableOpacity
+                            key={index}
+                            style={[
+                                styles.optionButton,
+                                selectedOptions.includes(index) && styles.optionSelected,
+                            ]}
+                            onPress={() => toggleOption(index)}
+                        >
+                            <Text
+                                style={[
+                                    styles.optionText,
+                                    selectedOptions.includes(index) &&
+                                        styles.optionTextSelected,
+                                ]}
+                            >
+                                {option}
                             </Text>
-                        </View>
+                            <Icon
+                                name={
+                                    selectedOptions.includes(index)
+                                        ? 'check-circle'
+                                        : 'radio-button-unchecked'
+                                }
+                                size={24}
+                                color={
+                                    selectedOptions.includes(index)
+                                        ? '#ffffff'
+                                        : '#337689'
+                                }
+                            />
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {/* Bottom Controls */}
+                <View style={styles.bottomControls}>
+                    {/* Pause Button */}
+                    <TouchableOpacity
+                        onPress={() => setPlaying(!playing)}
+                        style={styles.pauseButton}
+                    >
+                        <Icon
+                            name={
+                                playing ? 'pause-circle-filled' : 'play-circle-filled'
+                            }
+                            size={40}
+                            color="#337689"
+                        />
                     </TouchableOpacity>
 
-                    {/* Start Button */}
+                    {/* Next Button */}
                     <TouchableOpacity
-                        onPress={() => {
-                            setPlaying(!playing)
-                            setIsPressed(true)
-                            setTimeout(() => setIsPressed(false), 200)
+                         onPress={() => {
+                            if (allOptionsSelected) {
+                                navigation.navigate('NextScreen'); 
+                            }
                         }}
                         style={[
-                            styles.startButton,
-                            isPressed && styles.startButtonPressed,
+                            styles.nextButton,
+                            allOptionsSelected && styles.nextButtonActive, // Apply active style if all options are selected
                         ]}
                     >
-                        <View style={styles.buttonContent}>
-                            <Text style={styles.buttonText}>
-                                {playing ? 'Pause Workout' : 'Start Workout'}
-                            </Text>
-                        </View>
+                        <Icon
+                            name = "arrow-forward"
+                            size = {28}
+                            color = {allOptionsSelected ? '#FFFFFF' : '#337689'}
+                            
+                        />
                     </TouchableOpacity>
+
                 </View>
             </SafeAreaView>
         </LinearGradient>
-    )
-}
+    );
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -124,8 +192,28 @@ const styles = StyleSheet.create({
         right: 0,
         height: height * 0.35,
     },
+    progressBarContainer: {
+        height: 5,
+        backgroundColor: '#e0e0e0',
+        marginVertical: 10,
+        borderRadius: 3,
+        marginTop: 16,
+    },
+    progressBarFill: {
+        height: '100%',
+        backgroundColor: '#337689',
+        borderRadius: 3,
+    },
     contentContainer: {
         flex: 1,
+        justifyContent: 'flex-start', // Push content upward slightly
+        paddingHorizontal: 24,
+        paddingBottom: 32,
+        marginTop: height * 0.34, 
+    },
+    progressBar: {
+        width: '85%',
+
     },
     backButton: {
         padding: 16,
@@ -134,184 +222,71 @@ const styles = StyleSheet.create({
         left: 0,
         zIndex: 10,
     },
-    contentWrapper: {
-        flex: 1,
-        justifyContent: 'flex-end',
-        paddingHorizontal: 24,
-        paddingBottom: 32,
-        marginTop: height * 0.4,
+    optionList: {
+        marginBottom: 16, // Reduced bottom margin for better alignment
+        marginTop: height * 0.07, 
     },
-    titleSection: {
-        marginBottom: 32,
-    },
-    title: {
-        fontSize: 36,
-        fontWeight: 'bold',
-        color: '#1A1A1A',
-        marginBottom: 8,
-    },
-    instructor: {
-        fontSize: 18,
-        color: '#333333',
-    },
-    infoSection: {
-        marginBottom: 48,
-    },
-    infoRow: {
+    optionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 16,
-    },
-    infoText: {
-        fontSize: 16,
-        color: '#1A1A1A',
-        marginLeft: 12,
-    },
-    task: {
-        borderRadius: 30,
-        overflow: 'hidden',
-        backgroundColor: '#FFFFFF',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-    taskDone: {
-        borderRadius: 30,
-        overflow: 'hidden',
-        backgroundColor: '#337689',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-    startButton: {
-        borderRadius: 30,
-        overflow: 'hidden',
-        backgroundColor: '#337689',
-        elevation: 2,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.2,
-        shadowRadius: 2,
-    },
-    startButtonPressed: {
-        opacity: 0.9,
-        transform: [{ scale: 0.98 }],
-    },
-    buttonContent: {
+        justifyContent: 'space-between',
+        backgroundColor: '#ffffff',
         paddingVertical: 16,
-        paddingHorizontal: 32,
-        alignItems: 'center',
+        paddingHorizontal: 24,
+        borderRadius: 12,
+        marginBottom: 12,
+        borderWidth: 2, // Add border for unselected state
+        borderColor: '#E5E5E5', // Light gray border for unselected items
+        elevation: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+
+        // Adjust width and centering
+        width: width * 0.85, // Set button width to be smaller than the screen width (85%)
+        alignSelf: 'center', // Center the button horizontally
     },
-    buttonText: {
-        color: 'white',
+    optionSelected: {
+        backgroundColor: '#337689',
+        borderColor: '#337689', // Match selected background color to remove border contrast
+    },
+    optionText: {
         fontSize: 18,
-        fontWeight: '600',
+        color: '#337689',
+        fontWeight: '500',
     },
-})
+    optionTextSelected: {
+        color: '#ffffff',
+    },
+    bottomControls: {
+        position: 'absolute', // Position it at the bottom
+        bottom: 20, // Adjust bottom spacing
+        right: 20, // Align to the right
+        flexDirection: 'row', // Arrange buttons in a row
+        alignItems: 'center', // Keep them aligned vertically
+        gap: 5, // Space between buttons
+    },
+    pauseButton: {
+        padding: 5,
+    },
+    
+    nextButton: {
+        width: 34, // Diameter of the circle
+        height: 34, // Diameter of the circle
+        borderRadius: 17, // Half of the width/height to make it circular
+        borderColor: '#337689',
+        borderWidth: 3,
+        backgroundColor: '#ffffff', // Circle background color
+        justifyContent: 'center', // Center the icon vertically
+        alignItems: 'center', // Center the icon horizontally
+    },
 
-export default WorkoutRounds
+    nextButtonActive: {
+        backgroundColor: '#337689', 
+        borderColor: '#337689',     
+    },
+    
+});
 
-// import React, { useState, useCallback } from 'react'
-// import {
-//     View,
-//     Text,
-//     TouchableOpacity,
-//     SafeAreaView,
-//     Dimensions,
-//     StyleSheet,
-// } from 'react-native'
-// import Icon from 'react-native-vector-icons/MaterialIcons'
-// import { useNavigation } from '@react-navigation/native'
-// import YoutubePlayer from 'react-native-youtube-iframe'
-// import { LinearGradient } from 'expo-linear-gradient'
-
-
-// interface Exercise {
-//   id: string;
-//   name: string;
-//   completed: boolean;
-// }
-
-// const WorkoutRounds = () => {
-//   const [exercises, setExercises] = useState<Exercise[]>([
-//     { id: '1', name: 'Side Plank', completed: false },
-//     { id: '2', name: 'Push-ups', completed: false },
-//     { id: '3', name: 'Mountain Climbers', completed: false },
-//     { id: '4', name: 'Leg Raises', completed: false }
-//   ]);
-
-//   const toggleExercise = (id: string) => {
-//     setExercises(exercises.map(exercise => 
-//       exercise.id === id 
-//         ? { ...exercise, completed: !exercise.completed }
-//         : exercise
-//     ));
-//   };
-
-//   return (
-//     <div className="max-w-md mx-auto p-4 space-y-3">
-//       {exercises.map(exercise => (
-//         <div 
-//           key={exercise.id}
-//           className="flex items-center bg-slate-600 rounded-lg p-4 text-white cursor-pointer"
-//           onClick={() => toggleExercise(exercise.id)}
-//         >
-//           <span className="flex-grow text-lg">{exercise.name}</span>
-//           <div className={`
-//             w-6 h-6 rounded-full flex items-center justify-center
-//             ${exercise.completed ? 'bg-white' : 'border-2 border-white'}
-//           `}>
-//             {exercise.completed && (
-//               <svg 
-//                 className="w-4 h-4 text-slate-600" 
-//                 fill="none" 
-//                 strokeLinecap="round" 
-//                 strokeLinejoin="round" 
-//                 strokeWidth="2" 
-//                 viewBox="0 0 24 24" 
-//                 stroke="currentColor"
-//               >
-//                 <path d="M5 13l4 4L19 7" />
-//               </svg>
-//             )}
-//           </div>
-//         </div>
-//       ))}
-      
-//       <div className="fixed bottom-4 right-4 flex gap-2">
-//         <button className="p-3 bg-slate-600 rounded-full text-white">
-//           <svg 
-//             className="w-6 h-6" 
-//             fill="none" 
-//             strokeLinecap="round" 
-//             strokeLinejoin="round" 
-//             strokeWidth="2" 
-//             viewBox="0 0 24 24" 
-//             stroke="currentColor"
-//           >
-//             <path d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-//           </svg>
-//         </button>
-//         <button className="p-3 bg-slate-600 rounded-full text-white">
-//           <svg 
-//             className="w-6 h-6" 
-//             fill="none" 
-//             strokeLinecap="round" 
-//             strokeLinejoin="round" 
-//             strokeWidth="2" 
-//             viewBox="0 0 24 24" 
-//             stroke="currentColor"
-//           >
-//             <path d="M14 5l7 7m0 0l-7 7m7-7H3" />
-//           </svg>
-//         </button>
-//       </div>
-//     </div>
-//   );
-// };
-
-// export default WorkoutRounds;
+export default WorkoutRounds;
