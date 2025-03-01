@@ -5,23 +5,29 @@ import { View, Text, Button, TouchableOpacity, ScrollView, StyleSheet, TextInput
 const durations = [5, 15, 30, 45, 60];
 const TopBar = ({ onSetTime }) => {
     const [selectedTime, setSelectedTime] = useState(0);
-
-    const [showingCustom, setShowingCustom] = useState(true)
+    const [showingCustom, setShowingCustom] = useState(true);
+    const[customTime, setCustomTime] = useState('');
     const handleCustomPress = () => {
         console.log("custom pressed")
-        console.log(showingCustom)
-        let time = 300
-        setShowingCustom(false)
-        onSetTime(time)
-    }
+        setShowingCustom(false)    };
+    const handleSetCustomTime = () => {
+        let time = parseInt(customTime, 10);
+        if (!isNaN(time) && time > 0) {
+            onSetTime(time);
+            setCustomTime('');
+            setShowingCustom(true);
+        }
+    };
+
     return (
         <View style={styles.topBar}>
-            <ScrollView
-                horizontal
+            {showingCustom && ( // Only show preset buttons when showingCustom is true
+            <View
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ justifyContent: 'space-between' }}
                 style={{ flex: 1, flexDirection: 'row' }}
-            >    {durations.map((time) => (
+            >    
+            {durations.map((time) => (
                 <TouchableOpacity
                     key={time}
                     style={[styles.timeOption, selectedTime === time && styles.selectedTime]}
@@ -33,15 +39,26 @@ const TopBar = ({ onSetTime }) => {
                     <Text style={[styles.timeText, selectedTime == time && styles.selectedText,]}>{time}</Text>
                 </TouchableOpacity>
             ))}
-            </ScrollView>
+            </View>
+            )}
+            
             <View style={{ flex: 0.25, backgroundColor: 'transparent' }} ></View>
 
             {!showingCustom ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <TextInput
                     placeholder="Enter custom time"
                     keyboardType="numeric" // to allow only numbers
+                    style = {styles.input}
+                    value = {customTime}
+                    onChangeText = {setCustomTime}
+                    
                 // You can add onChangeText and value here if needed for custom time
                 />
+                <TouchableOpacity style={styles.addButton} onPress={handleSetCustomTime}>
+                    <Text style={styles.addButtonText}>Set</Text>
+                </TouchableOpacity>
+                </View>
             ) : (
                 <TouchableOpacity style={styles.addButton} onPress={handleCustomPress}>
                     <Text style={styles.addButtonText}>+ Custom</Text>
@@ -50,7 +67,6 @@ const TopBar = ({ onSetTime }) => {
         </View>
     );
 };
-
 
 const TimerScreen = () => {
     const [timerDuration, setTimerDuration] = useState(30000)
@@ -171,14 +187,14 @@ const TimerScreen = () => {
 
 const styles = StyleSheet.create({
     topBar: {
-        width: '80%',
+        width: '90%',
         flexDirection: 'row',
         alignItems: 'center',
         alignSelf: 'center',
         justifyContent: 'space-between',
-        marginTop: 130,
+        marginTop: 100,
         paddingVertical: 5,
-        paddingHorizontal: 11,
+        paddingHorizontal: 10,
         backgroundColor: '#FFFFFF', //changed this for testing
         //elevation: 2, // dropshadow Android
         shadowColor: '#000', // dropshadow iOS
@@ -283,7 +299,17 @@ const styles = StyleSheet.create({
 
     color: {
         backgroundColor: "FF0000"
-    }
+    },
+    input: {
+        borderWidth: 1,
+        borderColor: '#327689',
+        borderRadius: 5,
+        padding: 8,
+        fontSize: 16,
+        textAlign: 'center',
+        width: '63%',
+        marginHorizontal: 10,
+    },
 });
 
 export default TimerScreen;
