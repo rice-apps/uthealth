@@ -1,0 +1,19 @@
+{
+	"name": "UTHealth Neurology Dashboard",
+	"short_name": "UTHealth Neuro",
+	"icons": [
+		{
+			"src": "/ut-health-logo.png",
+			"sizes": "32x32",
+			"type": "image/png"
+		},
+		{
+			"src": "/ut-health-logo.png",
+			"sizes": "180x180",
+			"type": "image/png"
+		}
+	],
+	"theme_color": "#327689",
+	"background_color": "#ffffff",
+	"display": "standalone"
+}
