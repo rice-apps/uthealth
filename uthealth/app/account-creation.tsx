@@ -1,6 +1,39 @@
-import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native'
+import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView, Alert } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthStackParamList } from './auth-navigator';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'AccountCreation'>;
+
+// export default function AccountCreation({ navigation }: Props) {
+// 	const [firstName, setFirstName] = useState<string>('');
+// 	const [lastName, setLastName] = useState<string>('');
+// 	const [phoneNumber, setPhoneNumber] = useState<string>('');
+// 	const [email, setEmail] = useState<string>('');
+// 	const [password, setPassword] = useState<string>('');
+// 	const [reenterPassword, setReenterPassword] = useState<string>('');
+
+// 	async function validAccountNavigate() {
+
+// 		if (password == reenterPassword) {
+// 			navigation.navigate( 'Gender', {
+// 				firstName: firstName, 
+// 				lastName: lastName, 
+// 				phoneNumber: phoneNumber,
+// 				email: email,
+// 				password: password})
+// 		} else {
+// 			Alert.alert('Error', 'Passwords fo not match', [
+// 				{ text: 'OK'},
+// 			]);
+// 		}
+
+// 	}
+
+// 	return
+// }
+
 
 export default function AccountCreation() {
 	type UserData = {
