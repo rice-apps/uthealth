@@ -1,157 +1,246 @@
-import { View, Text, TextInput, Button, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard } from 'react-native'
+import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native'
 import '../global.css'
-import { useState } from 'react'
-import { Link } from 'expo-router'
+import { useState, useEffect } from 'react'
+import { Link, useRouter } from 'expo-router'
 import { AppleAuthButton } from '../components/AppleAuthButton'
+import supabase from './utils/supabase'
+import * as Crypto from 'expo-crypto'
 
-export default function PhoneSignIn() {
-	const [mobileNumber, setMobileNumber] = useState('')
-	return (
-		<TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-			<SafeAreaView style={styles.page}>
-				<Image
-					// source={{ uri: '' }} // Replace with the actual path to your logo image
-					style={styles.logo}
-				/>
+export default function EmailSignIn() {
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [isIOS, setIsIOS] = useState(false)
+  useEffect(() => {
+    setIsIOS(Platform.OS === 'ios')
+  }, [])
 
-				<Text style={styles.title}>Sign in with your mobile number</Text>
+  const hashEmail = async (email) => {
+    try {
+      const atIndex = email.indexOf('@')
+      if (atIndex === -1) {
+        throw new Error('Invalid email format: missing @ symbol')
+      }    
+      const username = email.substring(0, atIndex).toLowerCase().trim()
+      const domain = email.substring(atIndex).toLowerCase().trim()
+      const digest = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        username
+      )
+      console.log('Email hashed successfully')
+      return digest + domain
+    } catch (error) {
+      console.error('Error hashing email:', error)
+      return null
+    }
+  }
+  const signInWithEmail = async () => {
+    if (!email || !password) {
+      setError('Email and password are required')
+      return
+    }
+    setIsLoading(true)
+    setError(null)
+    try {
+      const hashedEmail = await hashEmail(email)
+      if (!hashedEmail) {
+        throw new Error('Failed to hash email')
+      }
+      const { data, error: authError } = await supabase.auth.signInWithPassword({
+        email: hashedEmail, // Use hashed email here, matching what was used in signup
+        password: password,
+      })
 
-				<View style={styles.formContainer}>
-					<TextInput style={styles.input} placeholder="Enter your mobile number" value={mobileNumber} onChangeText={setMobileNumber} keyboardType="phone-pad" />
+      if (authError) {
+        console.error('Authentication error:', authError)
+        throw authError
+      }
+      console.log('Sign-in successful')
+      alert('Signed in successfully!')
+      router.replace(HeightScreen) // Adjust route as needed
+      
+    } catch (error) {
+      console.error('Error signing in:', error)
+      setError(error.message || 'Failed to sign in')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
-					<TouchableOpacity style={styles.primaryButton}>
-						<Text style={styles.primaryButtonText}>Continue</Text>
-					</TouchableOpacity>
-
-					<Text style={styles.helpText}>Need Help?</Text>
-
-					<View style={styles.lineContainer}>
-						<View style={styles.line} />
-						<Text style={styles.orText}>or</Text>
-						<View style={styles.line} />
-					</View>
-
-					<View style={styles.socialButtonsContainer}>
-						<AppleAuthButton />
-
-						<TouchableOpacity style={styles.socialButton}>
-							<Text style={styles.socialButtonText}>G Continue with Google</Text>
-						</TouchableOpacity>
-					</View>
-
-					<Text style={styles.enrollText}>
-						No Account?{' '}
-						<Link href="/account-creation" style={styles.enrollLink}>
-							Enroll Now
-						</Link>
-					</Text>
-				</View>
-			</SafeAreaView>
-		</TouchableWithoutFeedback>
-	)
+  return (
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <SafeAreaView style={styles.page}>
+        <Image
+          // source={{ uri: '' }} // Replace with the actual path to your logo image
+          style={styles.logo}
+        />
+        <Text style={styles.title}>Sign in with your email</Text>
+        <View style={styles.formContainer}>
+          {error && (
+            <Text style={styles.errorText}>{error}</Text>
+          )}
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Email address"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+          
+          <TouchableOpacity 
+            style={[styles.primaryButton, isLoading && styles.disabledButton]}
+            onPress={signInWithEmail}
+            disabled={isLoading}
+          >
+            <Text style={styles.primaryButtonText}>
+              {isLoading ? 'Signing in...' : 'Sign In'}
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.lineContainer}>
+            <View style={styles.line} />
+            <Text style={styles.orText}>or</Text>
+            <View style={styles.line} />
+          </View>
+          
+          <View style={styles.socialButtonsContainer}>
+            {isIOS && <AppleAuthButton />}
+          </View>
+          
+          <Text style={styles.enrollText}>
+            No Account?{' '}
+            <Link href="/account-creation" style={styles.enrollLink}>
+              Enroll Now
+            </Link>
+          </Text>
+        </View>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
+  )
 }
 
 const darkOrange = '#844016'
 const styles = StyleSheet.create({
-	page: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 16,
-		backgroundColor: '#FFF',
-	},
-	logo: {
-		width: 100,
-		height: 100,
-		marginBottom: 20,
-		borderRadius: 10,
-		backgroundColor: '#e0e0e0', // Placeholder color for the logo
-	},
-	title: {
-		fontSize: 20,
-		color: 'black',
-		marginBottom: 20,
-	},
-	formContainer: {
-		width: '100%',
-		alignItems: 'center',
-		paddingHorizontal: 20,
-	},
-	input: {
-		width: '100%',
-		padding: 10,
-		borderWidth: 1,
-		borderColor: darkOrange,
-		borderRadius: 8,
-		marginBottom: 16,
-		backgroundColor: '#FFF',
-		color: darkOrange,
-	},
-	primaryButton: {
-		backgroundColor: darkOrange,
-		borderRadius: 20,
-		paddingVertical: 12,
-		paddingHorizontal: 32,
-		alignItems: 'center',
-		marginTop: 10,
-	},
-	primaryButtonText: {
-		color: '#FFF',
-		fontSize: 16,
-		fontWeight: '600',
-	},
-	helpText: {
-		fontSize: 15,
-		color: 'black',
-		marginTop: 20,
-		marginBottom: 20,
-		textAlign: 'center',
-	},
-	lineContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		width: '100%',
-		marginVertical: 10,
-	},
-	line: {
-		height: 1,
-		backgroundColor: 'gray',
-		flex: 1,
-		marginHorizontal: 10,
-	},
-	orText: {
-		fontSize: 16,
-		color: 'black',
-	},
-	socialButtonsContainer: {
-		width: '100%',
-		alignItems: 'center',
-		marginTop: 10,
-	},
-	socialButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		borderWidth: 1,
-		borderColor: darkOrange,
-		borderRadius: 20,
-		paddingVertical: 10,
-		paddingHorizontal: 16,
-		marginBottom: 10,
-		width: '100%',
-		justifyContent: 'center',
-	},
-	socialButtonText: {
-		color: darkOrange,
-		fontSize: 16,
-		fontWeight: '500',
-	},
-	enrollText: {
-		marginTop: 20,
-		fontSize: 15,
-		textAlign: 'center',
-	},
-	enrollLink: {
-		fontWeight: 'bold',
-		color: '#000080', 
-	},
+  page: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: '#FFF',
+  },
+  logo: {
+    width: 100,
+    height: 100,
+    marginBottom: 20,
+    borderRadius: 10,
+    backgroundColor: '#e0e0e0', // Placeholder color for the logo
+  },
+  title: {
+    fontSize: 20,
+    color: 'black',
+    marginBottom: 20,
+  },
+  formContainer: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  input: {
+    width: '100%',
+    padding: 10,
+    borderWidth: 1,
+    borderColor: darkOrange,
+    borderRadius: 8,
+    marginBottom: 16,
+    backgroundColor: '#FFF',
+    color: darkOrange,
+  },
+  primaryButton: {
+    backgroundColor: darkOrange,
+    borderRadius: 20,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    alignItems: 'center',
+    marginTop: 10,
+    width: '100%',
+  },
+  disabledButton: {
+    backgroundColor: '#cccccc',
+  },
+  primaryButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  errorText: {
+    color: 'red',
+    marginBottom: 16,
+    textAlign: 'center',
+    width: '100%',
+  },
+  helpText: {
+    fontSize: 15,
+    color: darkOrange,
+    marginTop: 20,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  lineContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    marginVertical: 10,
+  },
+  line: {
+    height: 1,
+    backgroundColor: 'gray',
+    flex: 1,
+    marginHorizontal: 10,
+  },
+  orText: {
+    fontSize: 16,
+    color: 'black',
+  },
+  socialButtonsContainer: {
+    width: '100%',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  socialButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: darkOrange,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginBottom: 10,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  socialButtonText: {
+    color: darkOrange,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  enrollText: {
+    marginTop: 20,
+    fontSize: 15,
+    textAlign: 'center',
+  },
+  enrollLink: {
+    fontWeight: 'bold',
+    color: '#000080',
+  },
 })

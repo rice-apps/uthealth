@@ -4,6 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import '../global.css'
 import HomeScreen from './(tabs)'
 import {StyleSheet} from 'react-native'
+import PhoneSignIn from '../phone-signin';
 
 export default function Index() {
   return (

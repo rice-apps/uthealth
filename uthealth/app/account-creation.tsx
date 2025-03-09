@@ -1,21 +1,25 @@
-import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native'
+import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView, Alert } from 'react-native'
 import { useState } from 'react'
-import { Link } from 'expo-router'
+import { Link, useRouter } from 'expo-router'
+import supabase from './utils/supabase'
+import * as Crypto from 'expo-crypto'
 
 export default function AccountCreation() {
 	type UserData = {
 		firstName: string
 		lastName: string
-		phoneNumber: string
 		email: string
 		password: string
 		reenterPassword: string
 	}
 
+	const router = useRouter()
+	const [isLoading, setIsLoading] = useState(false)
+	const [error, setError] = useState<string | null>(null)
+
 	const [formData, setFormData] = useState<UserData>({
 		firstName: '',
 		lastName: '',
-		phoneNumber: '',
 		email: '',
 		password: '',
 		reenterPassword: '',
@@ -26,6 +30,91 @@ export default function AccountCreation() {
 			...prevData,
 			[name]: value,
 		}))
+	}
+	
+	const hashEmailUsername = async (email: string): Promise<string> => {
+		try {
+			const atIndex = email.indexOf('@')
+			if (atIndex === -1) {
+				throw new Error('Invalid email format: missing @ symbol')
+			}
+			const username = email.substring(0, atIndex).toLowerCase().trim()
+			const domain = email.substring(atIndex).toLowerCase().trim()
+			const digest = await Crypto.digestStringAsync(
+				Crypto.CryptoDigestAlgorithm.SHA256,
+				username
+			)
+			return digest + domain
+		} catch (error) {
+			throw error
+		}
+	}
+	
+	const validateForm = () => {
+		if (!formData.firstName || !formData.lastName) {
+			setError('First and last name are required')
+			return false
+		}
+		
+		if (!formData.email) {
+			setError('Email is required')
+			return false
+		}
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+		if (!emailRegex.test(formData.email)) {
+			setError('Please enter a valid email address')
+			return false
+		}
+		
+		if (!formData.password) {
+			setError('Password is required')
+			return false
+		}
+		
+		if (formData.password.length < 6) {
+			setError('Password must be at least 6 characters')
+			return false
+		}
+		
+		if (formData.password !== formData.reenterPassword) {
+			setError('Passwords do not match')
+			return false
+		}
+		
+		return true
+	}
+	
+	const signUpNewUser = async () => {
+		setError(null)
+
+		if (!validateForm()) {
+			return
+		}
+		setIsLoading(true)
+
+		try {
+			const hashedUsername = await hashEmailUsername(formData.email)
+			const { data, error: authError } = await supabase.auth.signUp({
+				email: hashedUsername,
+				password: formData.password,
+			})
+			if (authError) {
+				throw authError
+			}
+			if (!data.user) {
+				throw new Error('User data not returned from signup')
+			}
+			Alert.alert(
+				'Account Created',
+				'Your account has been created successfully. Please sign in.',
+				[{ text: 'OK', onPress: () => router.replace('/') }]
+			)
+
+		} catch (error) {
+			setError(error instanceof Error ? error.message : 'Failed to create account')
+		} finally {
+			setIsLoading(false)
+		}
 	}
 
 	return (
@@ -38,27 +127,64 @@ export default function AccountCreation() {
 							style={styles.logo}
 						/>
 
+						{error && (
+							<Text style={styles.errorText}>{error}</Text>
+						)}
+
 						<View style={styles.formContainer}>
 							<Text style={styles.inputLabel}>First Name</Text>
-							<TextInput style={styles.input} value={formData.firstName} onChangeText={(value) => handleChange('firstName', value)} />
+							<TextInput 
+								style={styles.input} 
+								value={formData.firstName} 
+								onChangeText={(value) => handleChange('firstName', value)} 
+							/>
 
 							<Text style={styles.inputLabel}>Last Name</Text>
-							<TextInput style={styles.input} value={formData.lastName} onChangeText={(value) => handleChange('lastName', value)} />
-
-							<Text style={styles.inputLabel}>Phone Number</Text>
-							<TextInput style={styles.input} value={formData.phoneNumber} onChangeText={(value) => handleChange('phoneNumber', value)} keyboardType="phone-pad" />
-
+							<TextInput 
+								style={styles.input} 
+								value={formData.lastName} 
+								onChangeText={(value) => handleChange('lastName', value)} 
+							/>
 							<Text style={styles.inputLabel}>Email</Text>
-							<TextInput style={styles.input} value={formData.email} onChangeText={(value) => handleChange('email', value)} keyboardType="email-address" />
+							<TextInput 
+								style={styles.input} 
+								value={formData.email} 
+								onChangeText={(value) => handleChange('email', value)} 
+								keyboardType="email-address"
+								autoCapitalize="none"
+							/>
 
 							<Text style={styles.inputLabel}>Password</Text>
-							<TextInput style={styles.input} value={formData.password} onChangeText={(value) => handleChange('password', value)} secureTextEntry />
+							<TextInput 
+								style={styles.input} 
+								value={formData.password} 
+								onChangeText={(value) => handleChange('password', value)} 
+								secureTextEntry 
+							/>
 
 							<Text style={styles.inputLabel}>Confirm Password</Text>
-							<TextInput style={styles.input} value={formData.reenterPassword} onChangeText={(value) => handleChange('reenterPassword', value)} secureTextEntry />
+							<TextInput 
+								style={styles.input} 
+								value={formData.reenterPassword} 
+								onChangeText={(value) => handleChange('reenterPassword', value)} 
+								secureTextEntry 
+							/>
 
-							<TouchableOpacity style={styles.primaryButton}>
-								<Text style={styles.primaryButtonText}>Create Account</Text>
+							<TouchableOpacity 
+								style={[styles.primaryButton, isLoading && styles.disabledButton]}
+								onPress={signUpNewUser}
+								disabled={isLoading}
+							>
+								<Text style={styles.primaryButtonText}>
+									{isLoading ? 'Creating Account...' : 'Create Account'}
+								</Text>
+							</TouchableOpacity>
+							
+							<TouchableOpacity 
+								style={styles.secondaryButton}
+								onPress={() => router.back()}
+							>
+								<Text style={styles.secondaryButtonText}>Back to Sign In</Text>
 							</TouchableOpacity>
 						</View>
 					</View>
@@ -87,10 +213,16 @@ const styles = StyleSheet.create({
 	logo: {
 		width: 100,
 		height: 100,
-		marginBottom: 50,
-		marginTop: 50,
+		marginBottom: 30,
+		marginTop: 30,
 		borderRadius: 10,
 		backgroundColor: '#e0e0e0', // Placeholder color for the logo
+	},
+	errorText: {
+		color: 'red',
+		marginBottom: 16,
+		textAlign: 'center',
+		width: '100%',
 	},
 	inputLabel: {
 		fontSize: 15,
@@ -119,17 +251,33 @@ const styles = StyleSheet.create({
 		paddingVertical: 12,
 		paddingHorizontal: 32,
 		alignItems: 'center',
-		marginTop: 50,
-		marginBottom: 50,
+		marginTop: 30,
+		marginBottom: 20,
+		width: '100%',
+	},
+	disabledButton: {
+		backgroundColor: '#cccccc',
 	},
 	primaryButtonText: {
 		color: '#FFF',
 		fontSize: 16,
 		fontWeight: '600',
 	},
+	secondaryButton: {
+		borderRadius: 20,
+		paddingVertical: 12,
+		paddingHorizontal: 32,
+		alignItems: 'center',
+		marginBottom: 30,
+	},
+	secondaryButtonText: {
+		color: darkOrange,
+		fontSize: 16,
+		fontWeight: '600',
+	},
 	enrollLink: {
 		fontWeight: 'bold',
-		color: '#000080', // Dark blue for emphasis
+		color: '#000080', 
 		alignSelf: 'flex-start',
 	},
 })
