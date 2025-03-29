@@ -5,6 +5,7 @@ import { Link, useRouter } from 'expo-router'
 import { AppleAuthButton } from '../components/AppleAuthButton'
 import supabase from './utils/supabase'
 import * as Crypto from 'expo-crypto'
+import { Alert } from 'react-native';
 
 export default function EmailSignIn() {
   const router = useRouter()
@@ -57,9 +58,11 @@ export default function EmailSignIn() {
         console.error('Authentication error:', authError)
         throw authError
       }
-      console.log('Sign-in successful')
-      alert('Signed in successfully!')
-      router.replace(HeightScreen) // Adjust route as needed
+      Alert.alert(
+        'Signed in successfully!',
+        'You have successfully signed in',
+        [{ text: 'OK', onPress: () => router.replace('/exercises_list') }]
+      )
       
     } catch (error) {
       console.error('Error signing in:', error)

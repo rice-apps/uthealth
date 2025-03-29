@@ -139,8 +139,8 @@ export default function AccountCreation() {
 			}
 			Alert.alert(
 				'Account Created',
-				'Your account has been created successfully. Please sign in.',
-				[{ text: 'OK', onPress: () => router.replace('/') }]
+				'Your account has been created successfully',
+				[{ text: 'OK', onPress: () => router.replace('/dobInput') }]
 			)
 
 		} catch (error) {
