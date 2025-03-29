@@ -67,7 +67,7 @@ const TopBar = ({ onSetTime }) => {
         </View>
     );
 };
-
+//NOTE: FIX THE BUTTONS. WHEN YOU HIT PAUSE, TIMER SHOULD STOP AND OPTIONS SHOULD BE RESET AND START
 const TimerScreen = () => {
     const [timerDuration, setTimerDuration] = useState(30000)
     const [timeLeft, setTimeLeft] = useState(timerDuration);
@@ -276,20 +276,35 @@ const styles = StyleSheet.create({
     startButton: {
         backgroundColor: '#327680',
         paddingVertical: 14,
-        paddingHorizontal: 45,
-        borderRadius: 12,
+        paddingHorizontal: 70,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
     },
     stopButton: {
         backgroundColor: '#327680',
         paddingVertical: 14,
-        paddingHorizontal: 25,
-        borderRadius: 12,
+        paddingHorizontal: 35,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
     },
     pauseButton: {
         backgroundColor: '#327680',
         paddingVertical: 14,
-        paddingHorizontal: 25,
-        borderRadius: 12,
+        paddingHorizontal: 30,
+        borderRadius: 30,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.5,
+        shadowRadius: 4,
+        elevation: 5,
     },
     buttonText: {
         color: '#FFFFFF',
