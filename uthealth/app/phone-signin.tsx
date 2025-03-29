@@ -49,7 +49,7 @@ export default function EmailSignIn() {
         throw new Error('Failed to hash email')
       }
       const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: hashedEmail, // Use hashed email here, matching what was used in signup
+        email: hashedEmail, 
         password: password,
       })
 
