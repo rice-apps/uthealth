@@ -3,6 +3,39 @@ import { useState } from 'react'
 import { Link, useRouter } from 'expo-router'
 import supabase from './utils/supabase'
 import * as Crypto from 'expo-crypto'
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AuthStackParamList } from './auth-navigator';
+
+type Props = NativeStackScreenProps<AuthStackParamList, 'AccountCreation'>;
+
+// export default function AccountCreation({ navigation }: Props) {
+// 	const [firstName, setFirstName] = useState<string>('');
+// 	const [lastName, setLastName] = useState<string>('');
+// 	const [phoneNumber, setPhoneNumber] = useState<string>('');
+// 	const [email, setEmail] = useState<string>('');
+// 	const [password, setPassword] = useState<string>('');
+// 	const [reenterPassword, setReenterPassword] = useState<string>('');
+
+// 	async function validAccountNavigate() {
+
+// 		if (password == reenterPassword) {
+// 			navigation.navigate( 'Gender', {
+// 				firstName: firstName, 
+// 				lastName: lastName, 
+// 				phoneNumber: phoneNumber,
+// 				email: email,
+// 				password: password})
+// 		} else {
+// 			Alert.alert('Error', 'Passwords fo not match', [
+// 				{ text: 'OK'},
+// 			]);
+// 		}
+
+// 	}
+
+// 	return
+// }
+
 
 export default function AccountCreation() {
 	type UserData = {
