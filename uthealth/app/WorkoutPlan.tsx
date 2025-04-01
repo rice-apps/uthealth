@@ -201,6 +201,8 @@ const styles = StyleSheet.create({
     fontSize: 32,
     color: "#327689",
     fontFamily: "CrimsonText_400Regular",
+    alignItems: "center",
+    justifyContent: "center",
   },
   container: {
     flexDirection: 'row', // Places children (boxes) side by side
