@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import DateTimePickerModal from 'react-native-modal-datetime-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useNavigation } from '@react-navigation/native'
+import { useRouter } from 'expo-router'
 import '../global.css'
 
 const RANGE = 20
@@ -324,7 +324,6 @@ const generateSurroundingDates = (
 }
 
 const LandingPage: React.FC = () => {
-    // const navigation = useNavigation()
     const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
         null
     )
@@ -342,6 +341,8 @@ const LandingPage: React.FC = () => {
 
     const flatListRef = useRef<FlatList<DateItem>>(null)
     const middleIndex = RANGE
+
+    const router = useRouter()
 
     useEffect(() => {
         if (flatListRef.current) {
@@ -563,7 +564,12 @@ const LandingPage: React.FC = () => {
                             // onPress={() => navigation.navigate('Workout Plan')}
                             className="flex-row items-center justify-between bg-white rounded-lg py-4 px-4 mt-2 shadow-sm"
                         >
-                            <Text className="text-lg color-[#327689] font-bold" style={{ fontFamily: 'Avenir' }}>Week 1</Text>
+                            <Text
+                                className="text-lg color-[#327689] font-bold"
+                                style={{ fontFamily: 'Avenir' }}
+                            >
+                                Week 1
+                            </Text>
                             <Icon
                                 name="arrow-forward"
                                 size={24}
@@ -581,9 +587,7 @@ const LandingPage: React.FC = () => {
                                 <Icon name="home" size={28} color="#327689" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() =>
-                                    navigation.navigate('WorkoutPage')
-                                }
+                                onPress={() => router.push('./WorkoutPage')}
                             >
                                 <Icon
                                     name="fitness-center"

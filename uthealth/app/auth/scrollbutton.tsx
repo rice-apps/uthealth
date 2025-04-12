@@ -1,46 +1,77 @@
-import { StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
-import { useState, useRef } from "react";
-import { Dimensions, TouchableOpacity, TouchableWithoutFeedback, View, Text, Button } from "react-native";
-import WheelPicker from '@quidone/react-native-wheel-picker';
+import {
+    StyleSheet,
+    Dimensions,
+    TouchableOpacity,
+    TouchableWithoutFeedback,
+    View,
+    Text,
+} from 'react-native'
+import { useRouter } from 'expo-router'
+import React, { useState, useRef } from 'react'
+import WheelPicker from '@quidone/react-native-wheel-picker'
 
-export default function scrollButton() {
-    const data = [...Array(32).keys()].map((index) => ({
+type PickerItem = {
+    value: string | number
+    label: string
+}
+
+type PickerEvent = {
+    item: PickerItem
+}
+
+const ScrollButton: React.FC = () => {
+    const data: PickerItem[] = [...Array(32).keys()].map((index) => ({
         value: index,
         label: index.toString(),
     }))
     data.unshift({ value: 'Month', label: 'Month' })
-    const [{ width, height }, setSize] = useState({ width: 0, height: 0 });
-    const [value, setValue] = useState('Month');
-    const [isYearVisible, setYearIsVisible] = useState(false);
-    const valueRef = useRef(value);
-    const handleValueChanged = ({ item: { value } }) => {
-        valueRef.current = value;
+
+    const [{ width, height }, setSize] = useState<{
+        width: number
+        height: number
+    }>({ width: 0, height: 0 })
+    const [value, setValue] = useState<string>('Month')
+    const [isYearVisible, setYearIsVisible] = useState<boolean>(false)
+    const valueRef = useRef<string>(value)
+
+    const handleValueChanged = ({ item: { value } }: PickerEvent) => {
+        valueRef.current = value.toString()
         console.log(value)
-    };
+    }
+
+    const handleValueEnd = ({ item: { value } }: PickerEvent) => {
+        setValue(value.toString())
+    }
+
     const handleYearButtonPress = () => {
         setYearIsVisible(true)
-    };
-    const handleValueEnd = ({ item: { value } }) => {
-        setValue(value)
     }
+
     const handleTapOutside = () => {
         setValue(valueRef.current)
-        console.log("pressed")
+        console.log('pressed')
         setYearIsVisible(false)
     }
+
     return (
         <View style={styles.year}>
-            <TouchableWithoutFeedback onPress={handleTapOutside} accessible={false}>
-                <View style={[styles.wrapper, { width, height }]} onLayout={() => setSize(Dimensions.get('window'))} />
+            <TouchableWithoutFeedback
+                onPress={handleTapOutside}
+                accessible={false}
+            >
+                <View
+                    style={[styles.wrapper, { width, height }]}
+                    onLayout={() => setSize(Dimensions.get('window'))}
+                />
             </TouchableWithoutFeedback>
+
             {isYearVisible && (
                 <View style={styles.year}>
                     <View style={styles.date}>
                         <WheelPicker
-                            data={data} // Data to be used by the picker
-                            value={value} // Current value
-                            onValueChanging={handleValueChanged} // Handle value change
+                            data={data}
+                            value={value}
+                            onValueChanging={handleValueChanged}
                             onValueChanged={handleValueEnd}
                             renderOverlay={() => null}
                             itemTextStyle={styles.pickerItemText}
@@ -49,31 +80,35 @@ export default function scrollButton() {
                     <View style={styles.buttonNotTouchable}></View>
                 </View>
             )}
+
             {!isYearVisible && (
-                <TouchableOpacity style={styles.button} onPress={handleYearButtonPress}>
+                <TouchableOpacity
+                    style={styles.button}
+                    onPress={handleYearButtonPress}
+                >
                     <Text style={styles.buttonText}>{`${value}`}</Text>
                 </TouchableOpacity>
             )}
         </View>
-    );
+    )
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
         padding: 20,
-        backgroundColor: "white",
-        alignItems: "center",
+        backgroundColor: 'white',
+        alignItems: 'center',
         position: 'relative',
     },
     title: {
         fontSize: 24,
         fontWeight: 700,
         lineHeight: 29.52,
-        textAlign: "center",
+        textAlign: 'center',
         width: 254,
         paddingTop: 67,
-        paddingBottom: 30
+        paddingBottom: 30,
     },
     date: {
         position: 'absolute',
@@ -111,7 +146,7 @@ const styles = StyleSheet.create({
         borderColor: '#844016', // Border color (e.g., white)
         width: 100,
         height: 50,
-        pointerEvents: 'none'
+        pointerEvents: 'none',
     },
     buttonText: {
         fontWeight: '400', // Set font weight
@@ -121,12 +156,14 @@ const styles = StyleSheet.create({
     },
     year: {
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     pickerItemText: {
         color: '#844016',
         fontWeight: '400', // Set font weight
         fontSize: 20,
         fontFamily: 'Space Mono Regular',
-    }
-});
+    },
+})
+
+export default ScrollButton
