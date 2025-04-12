@@ -9,27 +9,28 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     Platform,
+    Alert,
 } from 'react-native'
 import '../global.css'
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useRouter } from 'expo-router'
 import { AppleAuthButton } from '../../components/AppleAuthButton'
 import supabase from '../utils/supabase'
 import * as Crypto from 'expo-crypto'
-import { Alert } from 'react-native'
 
-export default function EmailSignIn() {
+const EmailSignIn: React.FC = () => {
     const router = useRouter()
-    const [email, setEmail] = useState('')
-    const [password, setPassword] = useState('')
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState(null)
-    const [isIOS, setIsIOS] = useState(false)
+    const [email, setEmail] = useState<string>('')
+    const [password, setPassword] = useState<string>('')
+    const [isLoading, setIsLoading] = useState<boolean>(false)
+    const [error, setError] = useState<string | null>(null)
+    const [isIOS, setIsIOS] = useState<boolean>(false)
+
     useEffect(() => {
         setIsIOS(Platform.OS === 'ios')
     }, [])
 
-    const hashEmail = async (email) => {
+    const hashEmail = async (email: string): Promise<string | null> => {
         try {
             const atIndex = email.indexOf('@')
             if (atIndex === -1) {
@@ -48,18 +49,22 @@ export default function EmailSignIn() {
             return null
         }
     }
-    const signInWithEmail = async () => {
+
+    const signInWithEmail = async (): Promise<void> => {
         if (!email || !password) {
             setError('Email and password are required')
             return
         }
+
         setIsLoading(true)
         setError(null)
+
         try {
             const hashedEmail = await hashEmail(email)
             if (!hashedEmail) {
                 throw new Error('Failed to hash email')
             }
+
             const { data, error: authError } =
                 await supabase.auth.signInWithPassword({
                     email: hashedEmail,
@@ -70,6 +75,7 @@ export default function EmailSignIn() {
                 console.error('Authentication error:', authError)
                 throw authError
             }
+
             Alert.alert(
                 'Signed in successfully!',
                 'You have successfully signed in',
@@ -80,7 +86,7 @@ export default function EmailSignIn() {
                     },
                 ]
             )
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error signing in:', error)
             setError(error.message || 'Failed to sign in')
         } finally {
@@ -92,7 +98,7 @@ export default function EmailSignIn() {
         <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
             <SafeAreaView style={styles.page}>
                 <Image
-                    // source={{ uri: '' }} // Replace with the actual path to your logo image
+                    // source={{ uri: '' }} // Replace with actual image if needed
                     style={styles.logo}
                 />
                 <Text style={styles.title}>Sign in with your email</Text>
@@ -128,6 +134,7 @@ export default function EmailSignIn() {
                             {isLoading ? 'Signing in...' : 'Sign In'}
                         </Text>
                     </TouchableOpacity>
+
                     <View style={styles.lineContainer}>
                         <View style={styles.line} />
                         <Text style={styles.orText}>or</Text>
@@ -141,7 +148,7 @@ export default function EmailSignIn() {
                     <Text style={styles.enrollText}>
                         No Account?{' '}
                         <Link
-                            href="/account-creation"
+                            href="./account-creation"
                             style={styles.enrollLink}
                         >
                             Enroll Now
@@ -152,6 +159,8 @@ export default function EmailSignIn() {
         </TouchableWithoutFeedback>
     )
 }
+
+export default EmailSignIn
 
 const darkOrange = '#844016'
 const styles = StyleSheet.create({
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
         height: 100,
         marginBottom: 20,
         borderRadius: 10,
-        backgroundColor: '#e0e0e0', // Placeholder color for the logo
+        backgroundColor: '#e0e0e0',
     },
     title: {
         fontSize: 20,
