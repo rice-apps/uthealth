@@ -1,8 +1,14 @@
 import { View, Text, TextInput, StyleSheet, SafeAreaView, Image, TouchableOpacity, TouchableWithoutFeedback, Keyboard, ScrollView } from 'react-native'
 import { useState } from 'react'
 import { Link } from 'expo-router'
+import { useRouter } from 'expo-router'
 
 export default function AccountCreation() {
+	const router = useRouter();
+	const navigateToAssessment1 = () => {
+		// Logic to navigate to home screen
+		router.push('/gender')
+	}
 	type UserData = {
 		firstName: string
 		lastName: string
@@ -57,7 +63,7 @@ export default function AccountCreation() {
 							<Text style={styles.inputLabel}>Confirm Password</Text>
 							<TextInput style={styles.input} value={formData.reenterPassword} onChangeText={(value) => handleChange('reenterPassword', value)} secureTextEntry />
 
-							<TouchableOpacity style={styles.primaryButton}>
+							<TouchableOpacity onPress={navigateToAssessment1} style={styles.primaryButton}>
 								<Text style={styles.primaryButtonText}>Create Account</Text>
 							</TouchableOpacity>
 						</View>

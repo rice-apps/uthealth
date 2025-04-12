@@ -3,9 +3,17 @@ import '../global.css'
 import { useState } from 'react'
 import { Link } from 'expo-router'
 import { AppleAuthButton } from '../components/AppleAuthButton'
+import { useRouter } from 'expo-router'
 
 export default function PhoneSignIn() {
 	const [mobileNumber, setMobileNumber] = useState('')
+	const router = useRouter();
+	const navigateToHome = () => {
+		// Logic to navigate to home screen
+		console.log('Navigating to home with mobile number:', mobileNumber)
+		router.push('/landing-page')
+	}
+
 	return (
 		<TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
 			<SafeAreaView style={styles.page}>
@@ -19,7 +27,7 @@ export default function PhoneSignIn() {
 				<View style={styles.formContainer}>
 					<TextInput style={styles.input} placeholder="Enter your mobile number" value={mobileNumber} onChangeText={setMobileNumber} keyboardType="phone-pad" />
 
-					<TouchableOpacity style={styles.primaryButton}>
+					<TouchableOpacity onPress={navigateToHome} style={styles.primaryButton}>
 						<Text style={styles.primaryButtonText}>Continue</Text>
 					</TouchableOpacity>
 

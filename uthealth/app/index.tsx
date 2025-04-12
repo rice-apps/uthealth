@@ -3,17 +3,11 @@ import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import '../global.css'
 import { StyleSheet } from 'react-native'
-import { Slot } from 'expo-router'
+import { Slot, Redirect } from 'expo-router'
 
 export default function Index() {
-    return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <UserProvider>
-                <Slot />
-            </UserProvider>
-        </GestureHandlerRootView>
-    )
-}
+    return <Redirect href="/phone-signin" />;
+  }
 
 const styles = StyleSheet.create({
     row: {

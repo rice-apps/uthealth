@@ -51,7 +51,7 @@ export default function HeightScreen() {
       cm: totalInches
     };
     
-    router.back();
+    router.push('/landing-page');
   };
 
   const { min, max } = getMinMax();

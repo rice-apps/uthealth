@@ -2,14 +2,28 @@ import { ScrollViewStyleReset } from 'expo-router/html';
 import { type PropsWithChildren } from 'react';
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput } from 'react-native';
+import { useRouter } from 'expo-router';
 
 // Gender Selection Screen Component
 const GenderScreen: React.FC = () => {
-  const [otherGender, setOtherGender] = useState('');
+  const router = useRouter();
+  const navigateBack = () => {
+    // Logic to navigate to home screen
+    router.back()
+  }
+  const navigateNext = () => {
+    // Logic to navigate to home screen
+    router.push('/dobInput')
+  }
   
+  const [otherGender, setOtherGender] = useState('');
+
+  const [showingNext, setShowingNext] = useState(false);
   const handleOptionSelect = (option: string) => {
+    setShowingNext(true)
     console.log("Selected:", option);
   };
+  
 
   const handleNext = () => {
     // Add functionality for the "Next" button here
@@ -17,23 +31,23 @@ const GenderScreen: React.FC = () => {
   };
 
   const handleOtherInputChange = (text: string) => {
+    setShowingNext(true)
     setOtherGender(text);
     console.log("Other Gender Input:", text);
   };
 
-  {/* Next Button */}
-<TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-  <Text style={styles.nextButtonText}>Next</Text>
-</TouchableOpacity>
+  {/* Next Button */ }
+  
+
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.backButton}>
+      <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
         <Text style={styles.backButtonText}>{"< Assessment"}</Text>
       </TouchableOpacity>
-      
+
       <Text style={styles.title}>Gender</Text>
-      
+
       <View style={styles.optionsContainer}>
         {['Male', 'Female'].map((option) => (
           <TouchableOpacity
@@ -44,7 +58,7 @@ const GenderScreen: React.FC = () => {
             <Text style={styles.optionText}>{option}</Text>
           </TouchableOpacity>
         ))}
-        
+
         <TextInput
           style={styles.otherInput}
           placeholder="Other"
@@ -54,6 +68,9 @@ const GenderScreen: React.FC = () => {
           textAlign="center"
         />
       </View>
+      {showingNext&&<TouchableOpacity style={styles.nextButton} onPress={navigateNext}>
+        <Text style={styles.nextButtonText}>Next</Text>
+      </TouchableOpacity>}
     </View>
   );
 };
