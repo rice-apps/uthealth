@@ -8,7 +8,9 @@ import {
     Dimensions,
     TouchableOpacity,
 } from 'react-native'
-import { Text, StyleSheet } from 'react-native'
+import { Text, StyleSheet, Pressable } from 'react-native'
+import { useRouter } from 'expo-router'
+import Ionicons from '@expo/vector-icons/Ionicons'
 
 type PickerItem = {
     label: string
@@ -22,6 +24,7 @@ const DobInput = () => {
             value: index,
         }
     })
+    const router = useRouter()
     const monthData: PickerItem[] = [...Array(13).keys()].map((index) => {
         return {
             label: index.toString(),
@@ -101,6 +104,9 @@ const DobInput = () => {
 
     return (
         <View style={styles.container}>
+            <Pressable style={styles.backButton} onPress={() => router.back()}>
+                <Ionicons name="arrow-back" size={24} color="#327689" />
+            </Pressable>
             <TouchableWithoutFeedback
                 onPress={handleTapOutside}
                 accessible={false}
@@ -205,7 +211,10 @@ const DobInput = () => {
                 </View>
             </View>
             <View style={styles.container1}>
-                <TouchableOpacity style={styles.button1}>
+                <TouchableOpacity
+                    style={styles.button1}
+                    onPress={() => router.push('./weight-input')}
+                >
                     <Text style={styles.buttonText1}>Continue</Text>
                 </TouchableOpacity>
             </View>
@@ -214,6 +223,12 @@ const DobInput = () => {
 }
 
 const styles = StyleSheet.create({
+    backButton: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        zIndex: 1,
+    },
     container: {
         flex: 1,
         padding: 20,

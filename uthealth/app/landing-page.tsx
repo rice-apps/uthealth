@@ -11,7 +11,7 @@ import {
 } from 'react-native'
 import DateTimePickerModal from 'react-native-modal-datetime-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useNavigation } from '@react-navigation/native'
+import { useRouter } from 'expo-router'
 import '../global.css'
 
 const RANGE = 20
@@ -101,7 +101,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                 <View className="bg-white rounded-3xl p-6 w-11/12 max-w-lg">
                     {/* Header */}
                     <View className="flex-row justify-between items-center mb-6">
-                        <Text className="text-2xl font-semibold text-[#512B81]">
+                        <Text className="text-2xl font-semibold text-[#327689]">
                             Add activity
                         </Text>
                         <TouchableOpacity onPress={onClose} className="p-2">
@@ -123,7 +123,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                     }
                                     className={`flex-1 flex-row items-center justify-center px-4 py-3 rounded-full border ${
                                         selectedCategory === category.id
-                                            ? 'bg-[#512B81] border-[#512B81]'
+                                            ? 'bg-[#327689] border-[#327689]'
                                             : 'border-gray-200'
                                     }`}
                                 >
@@ -170,7 +170,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                                 className={`p-3 rounded-xl border ${
                                                     selectedExercise ===
                                                     exercise
-                                                        ? 'bg-[#512B81] border-[#512B81]'
+                                                        ? 'bg-[#327689] border-[#327689]'
                                                         : 'border-gray-200'
                                                 }`}
                                             >
@@ -198,7 +198,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                             }
                                             className={`p-3 rounded-xl border ${
                                                 selectedExercise === exercise
-                                                    ? 'bg-[#512B81] border-[#512B81]'
+                                                    ? 'bg-[#327689] border-[#327689]'
                                                     : 'border-gray-200'
                                             }`}
                                         >
@@ -234,7 +234,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                         }
                                         className={`px-4 py-2 rounded-full border ${
                                             selectedDuration === duration
-                                                ? 'bg-[#512B81] border-[#512B81]'
+                                                ? 'bg-[#327689] border-[#327689]'
                                                 : 'border-gray-200'
                                         }`}
                                     >
@@ -256,7 +256,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                     {/* Timer Section */}
                     {selectedDuration && (
                         <View className="flex-row items-center mb-6">
-                            <Icon name="timer" size={24} color="#512B81" />
+                            <Icon name="timer" size={24} color="#327689" />
                             <Text className="ml-2 text-gray-600">Timer</Text>
                         </View>
                     )}
@@ -273,7 +273,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                             selectedCategory &&
                             selectedExercise &&
                             selectedDuration
-                                ? 'bg-[#512B81]'
+                                ? 'bg-[#327689]'
                                 : 'bg-gray-200'
                         }`}
                     >
@@ -324,7 +324,6 @@ const generateSurroundingDates = (
 }
 
 const LandingPage: React.FC = () => {
-    // const navigation = useNavigation()
     const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
         null
     )
@@ -342,6 +341,8 @@ const LandingPage: React.FC = () => {
 
     const flatListRef = useRef<FlatList<DateItem>>(null)
     const middleIndex = RANGE
+
+    const router = useRouter()
 
     useEffect(() => {
         if (flatListRef.current) {
@@ -413,7 +414,7 @@ const LandingPage: React.FC = () => {
             <TouchableOpacity
                 onPress={() => handleCardSelect(item.fullDate)}
                 className={`w-14 h-16 items-center justify-center mx-1 rounded-xl ${
-                    isSelected ? 'bg-[#512B81]' : 'bg-white'
+                    isSelected ? 'bg-[#327689]' : 'bg-white'
                 } shadow-sm`}
                 style={{
                     elevation: 2,
@@ -460,7 +461,7 @@ const LandingPage: React.FC = () => {
                             <Icon
                                 name="calendar-today"
                                 size={24}
-                                color="#512B81"
+                                color="#327689"
                             />
                         </TouchableOpacity>
                     </View>
@@ -524,7 +525,7 @@ const LandingPage: React.FC = () => {
                                                     activity.category ===
                                                     'Running'
                                                         ? '#1E88E5'
-                                                        : '#512B81'
+                                                        : '#327689'
                                                 }
                                             />
                                         </View>
@@ -563,11 +564,16 @@ const LandingPage: React.FC = () => {
                             // onPress={() => navigation.navigate('Workout Plan')}
                             className="flex-row items-center justify-between bg-white rounded-lg py-4 px-4 mt-2 shadow-sm"
                         >
-                            <Text className="text-lg">Week 1</Text>
+                            <Text
+                                className="text-lg color-[#327689] font-bold"
+                                style={{ fontFamily: 'Avenir' }}
+                            >
+                                Week 1
+                            </Text>
                             <Icon
                                 name="arrow-forward"
                                 size={24}
-                                color="#512B81"
+                                color="#327689"
                             />
                         </TouchableOpacity>
                     </View>
@@ -578,12 +584,10 @@ const LandingPage: React.FC = () => {
                     <SafeAreaView>
                         <View className="flex-row justify-around items-center py-4 px-6">
                             <TouchableOpacity>
-                                <Icon name="home" size={28} color="#512B81" />
+                                <Icon name="home" size={28} color="#327689" />
                             </TouchableOpacity>
                             <TouchableOpacity
-                                onPress={() =>
-                                    navigation.navigate('WorkoutPage')
-                                }
+                                onPress={() => router.push('./WorkoutPage')}
                             >
                                 <Icon
                                     name="fitness-center"
@@ -593,7 +597,7 @@ const LandingPage: React.FC = () => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={() => setActivityModalVisible(true)}
-                                className="bg-[#512B81] p-4 rounded-full -mt-8"
+                                className="bg-[#327689] p-4 rounded-full -mt-8"
                             >
                                 <Icon name="add" size={28} color="#fff" />
                             </TouchableOpacity>
