@@ -6,7 +6,7 @@ import { StyleSheet } from 'react-native'
 import { Slot, Redirect } from 'expo-router'
 
 export default function Index() {
-    return <Redirect href="/phone-signin" />;
+    return <Redirect href="/satisfaction-page" />;
   }
 
 const styles = StyleSheet.create({
