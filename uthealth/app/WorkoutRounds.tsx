@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react'
 import {
     View,
     Text,
@@ -7,54 +7,54 @@ import {
     Dimensions,
     StyleSheet,
     Animated,
-} from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import YoutubePlayer from 'react-native-youtube-iframe';
-import { LinearGradient } from 'expo-linear-gradient';
+} from 'react-native'
+import Icon from 'react-native-vector-icons/MaterialIcons'
+import { useRouter } from 'expo-router'
+import YoutubePlayer from 'react-native-youtube-iframe'
+import { LinearGradient } from 'expo-linear-gradient'
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window')
 
 const WorkoutRounds: React.FC = () => {
-    const navigation = useNavigation();
-    const [playing, setPlaying] = useState(true);
-    const [selectedOptions, setSelectedOptions] = useState<number[]>([]); // Allow multiple selections
+    const router = useRouter()
+    const [playing, setPlaying] = useState(true)
+    const [selectedOptions, setSelectedOptions] = useState<number[]>([]) // Allow multiple selections
 
     const onStateChange = useCallback((state: string) => {
         if (state === 'ended') {
-            setPlaying(false);
+            setPlaying(false)
         }
-    }, []);
+    }, [])
 
-    const options = ['Lorem Ipsum', 'Lorem Ipsum', 'Lorem Ipsum']; // Only 3 options
+    const options = ['Lorem Ipsum', 'Lorem Ipsum', 'Lorem Ipsum'] // Only 3 options
 
     // Toggle selection for multiple options
     const toggleOption = (index: number) => {
-        setSelectedOptions((prevSelected) =>
-            prevSelected.includes(index)
-                ? prevSelected.filter((i) => i !== index) // Deselect if already selected
-                : [...prevSelected, index] // Add to selection if not selected
-        );
-    };
+        setSelectedOptions(
+            (prevSelected) =>
+                prevSelected.includes(index)
+                    ? prevSelected.filter((i) => i !== index) // Deselect if already selected
+                    : [...prevSelected, index] // Add to selection if not selected
+        )
+    }
 
-    const [progress] = useState(new Animated.Value(0));
-    const allOptionsSelected = selectedOptions.length === options.length;
+    const [progress] = useState(new Animated.Value(0))
+    const allOptionsSelected = selectedOptions.length === options.length
 
-        // Update progress bar based on the number of selected options
-        const updateProgress = () => {
-            const progressValue = selectedOptions.length / options.length;
-            Animated.timing(progress, {
-                toValue: progressValue,
-                duration: 500,
-                useNativeDriver: false,
-            }).start();
-        };
-    
-        // Watch for changes in selected options
-        React.useEffect(() => {
-            updateProgress();
-        }, [selectedOptions]);
-    
+    // Update progress bar based on the number of selected options
+    const updateProgress = () => {
+        const progressValue = selectedOptions.length / options.length
+        Animated.timing(progress, {
+            toValue: progressValue,
+            duration: 500,
+            useNativeDriver: false,
+        }).start()
+    }
+
+    // Watch for changes in selected options
+    React.useEffect(() => {
+        updateProgress()
+    }, [selectedOptions])
 
     return (
         <LinearGradient
@@ -65,7 +65,7 @@ const WorkoutRounds: React.FC = () => {
         >
             {/* Back Button */}
             <TouchableOpacity
-                onPress={() => navigation.goBack()}
+                onPress={() => router.back()}
                 style={styles.backButton}
             >
                 <Icon name="arrow-back" size={24} color="#FFFFFF" />
@@ -89,7 +89,6 @@ const WorkoutRounds: React.FC = () => {
                 />
             </View>
 
-
             {/* Content Container */}
             <SafeAreaView style={styles.contentContainer}>
                 {/* Progress Bar */}
@@ -97,7 +96,12 @@ const WorkoutRounds: React.FC = () => {
                     <Animated.View
                         style={[
                             styles.progressBarFill,
-                            { width: progress.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
+                            {
+                                width: progress.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0%', '100%'],
+                                }),
+                            },
                         ]}
                     />
                 </View>
@@ -109,7 +113,8 @@ const WorkoutRounds: React.FC = () => {
                             key={index}
                             style={[
                                 styles.optionButton,
-                                selectedOptions.includes(index) && styles.optionSelected,
+                                selectedOptions.includes(index) &&
+                                    styles.optionSelected,
                             ]}
                             onPress={() => toggleOption(index)}
                         >
@@ -148,7 +153,9 @@ const WorkoutRounds: React.FC = () => {
                     >
                         <Icon
                             name={
-                                playing ? 'pause-circle-filled' : 'play-circle-filled'
+                                playing
+                                    ? 'pause-circle-filled'
+                                    : 'play-circle-filled'
                             }
                             size={40}
                             color="#337689"
@@ -157,9 +164,9 @@ const WorkoutRounds: React.FC = () => {
 
                     {/* Next Button */}
                     <TouchableOpacity
-                         onPress={() => {
+                        onPress={() => {
                             if (allOptionsSelected) {
-                                navigation.navigate('NextScreen'); 
+                                router.push('./NextScreen')
                             }
                         }}
                         style={[
@@ -168,18 +175,16 @@ const WorkoutRounds: React.FC = () => {
                         ]}
                     >
                         <Icon
-                            name = "arrow-forward"
-                            size = {28}
-                            color = {allOptionsSelected ? '#FFFFFF' : '#337689'}
-                            
+                            name="arrow-forward"
+                            size={28}
+                            color={allOptionsSelected ? '#FFFFFF' : '#337689'}
                         />
                     </TouchableOpacity>
-
                 </View>
             </SafeAreaView>
         </LinearGradient>
-    );
-};
+    )
+}
 
 const styles = StyleSheet.create({
     container: {
@@ -209,11 +214,10 @@ const styles = StyleSheet.create({
         justifyContent: 'flex-start', // Push content upward slightly
         paddingHorizontal: 24,
         paddingBottom: 32,
-        marginTop: height * 0.34, 
+        marginTop: height * 0.34,
     },
     progressBar: {
         width: '85%',
-
     },
     backButton: {
         padding: 16,
@@ -224,7 +228,7 @@ const styles = StyleSheet.create({
     },
     optionList: {
         marginBottom: 16, // Reduced bottom margin for better alignment
-        marginTop: height * 0.07, 
+        marginTop: height * 0.07,
     },
     optionButton: {
         flexDirection: 'row',
@@ -270,7 +274,7 @@ const styles = StyleSheet.create({
     pauseButton: {
         padding: 5,
     },
-    
+
     nextButton: {
         width: 34, // Diameter of the circle
         height: 34, // Diameter of the circle
@@ -283,10 +287,9 @@ const styles = StyleSheet.create({
     },
 
     nextButtonActive: {
-        backgroundColor: '#337689', 
-        borderColor: '#337689',     
+        backgroundColor: '#337689',
+        borderColor: '#337689',
     },
-    
-});
+})
 
-export default WorkoutRounds;
+export default WorkoutRounds

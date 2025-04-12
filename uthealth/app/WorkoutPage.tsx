@@ -8,14 +8,14 @@ import {
     StyleSheet,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useNavigation } from '@react-navigation/native'
+import { useRouter } from 'expo-router'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { LinearGradient } from 'expo-linear-gradient'
 
 const { width, height } = Dimensions.get('window')
 
 const WorkoutPage: React.FC = () => {
-    const navigation = useNavigation()
+    const router = useRouter()
     const [playing, setPlaying] = useState(true)
     const [isPressed, setIsPressed] = useState(false)
 
@@ -54,7 +54,7 @@ const WorkoutPage: React.FC = () => {
             <SafeAreaView style={styles.contentContainer}>
                 {/* Back Button */}
                 <TouchableOpacity
-                    onPress={() => navigation.goBack()}
+                    onPress={() => router.back()}
                     style={styles.backButton}
                 >
                     <Icon name="arrow-back" size={24} color="white" />

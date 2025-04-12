@@ -2,19 +2,12 @@ import { UserProvider } from '@/user/UserContext'
 import 'react-native-gesture-handler'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import '../global.css'
-import HomeScreen from './(tabs)'
 import { StyleSheet } from 'react-native'
-import LandingPage from './landing-page'
+import { Slot, Redirect } from 'expo-router'
 
 export default function Index() {
-    return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-            <UserProvider>
-                <LandingPage />
-            </UserProvider>
-        </GestureHandlerRootView>
-    )
-}
+    return <Redirect href="/phone-signin" />;
+  }
 
 const styles = StyleSheet.create({
     row: {
