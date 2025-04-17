@@ -1,15 +1,21 @@
 // Height Page
 import { StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useState } from 'react'
+import { useContext, useState } from 'react'
 import { Pressable, View, Text } from 'react-native'
 import Ionicons from '@expo/vector-icons/Ionicons'
 import { RulerPicker } from 'react-native-ruler-picker'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from '../onboarding/OnboardingContext'
+import supabase from '../utils/supabase'
 
 export default function HeightScreen() {
     const router = useRouter()
     const [unit, setUnit] = useState<'ft' | 'cm'>('ft')
     const [totalInches, setTotalInches] = useState<number>(64)
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
 
     const handleUnitChange = (newUnit: 'ft' | 'cm') => {
         if (newUnit === 'cm' && unit === 'ft') {
@@ -42,19 +48,32 @@ export default function HeightScreen() {
         }
     }
 
-    const handleContinue = () => {
-        const height =
-            unit === 'ft'
-                ? {
-                      feet: Math.floor(totalInches / 12),
-                      inches: totalInches % 12,
-                      totalInches: totalInches,
-                  }
-                : {
-                      cm: totalInches,
-                  }
+    const handleContinue = async () => {
+        let height = totalInches
+        if (unit === 'cm') {
+            height = Math.round(totalInches * 2.54)
+        }
+        setTotalInches(height)
+        user.height = height
 
-        router.back()
+        const { error } = await supabase
+            .from('users')
+            .update({
+                weight: user.weight,
+                dob: user.dob,
+                height: user.height,
+                gender: user.gender,
+                onboarded: true,
+            })
+            .eq('patientID', user.patientID)
+            .single()
+        console.log(user.dob)
+        console.log(error)
+        if (error) {
+            throw error
+        }
+
+        router.push('../landing-page')
     }
 
     const { min, max } = getMinMax()

@@ -1,7 +1,7 @@
 import WheelPicker, {
     ValueChangingEvent,
 } from '@quidone/react-native-wheel-picker'
-import React, { useRef, useState } from 'react'
+import React, { useContext, useRef, useState } from 'react'
 import {
     View,
     TouchableWithoutFeedback,
@@ -11,6 +11,10 @@ import {
 import { Text, StyleSheet, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from '../onboarding/OnboardingContext'
 
 type PickerItem = {
     label: string
@@ -18,13 +22,16 @@ type PickerItem = {
 }
 
 const DobInput = () => {
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
+    const router = useRouter()
+
     const dayData: PickerItem[] = [...Array(32).keys()].map((index) => {
         return {
             label: index.toString(),
             value: index,
         }
     })
-    const router = useRouter()
+
     const monthData: PickerItem[] = [...Array(13).keys()].map((index) => {
         return {
             label: index.toString(),
@@ -213,7 +220,10 @@ const DobInput = () => {
             <View style={styles.container1}>
                 <TouchableOpacity
                     style={styles.button1}
-                    onPress={() => router.push('./weight-input')}
+                    onPress={() => {
+                        user.dob = new Date(year.value, month.value, day.value)
+                        router.push('./weight-input')
+                    }}
                 >
                     <Text style={styles.buttonText1}>Continue</Text>
                 </TouchableOpacity>

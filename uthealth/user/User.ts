@@ -8,49 +8,90 @@
  */
 
 export class User {
-	// Actual fields
-	#id = '%0';
-	#name = '%0'; // user-updatable
-	#groupId = '%0'; // user-updatable
+    // Actual fields
+    #patientID = ''
+    #clinicianID = ''
+    #gender = ''
+    #dob = new Date()
+    #weight = 0
+    #height = 0
 
-	deepCopy(): User {
-		const copy = new User();
+    deepCopy(): User {
+        const copy = new User()
 
-		copy.#id = this.#id;
-		copy.#name = this.#name;
-		copy.#groupId = this.#groupId;
+        copy.#patientID = this.#patientID
+        copy.#clinicianID = this.#clinicianID
+        copy.#gender = this.#gender
+        copy.#dob = new Date(this.#dob)
+        copy.#weight = this.#weight
+        copy.#height = this.#height
 
-		return copy;
-	}
+        return copy
+    }
 
-	clearUser() {
-		this.#id = '%0';
-		this.#name = '%0';
-		this.#groupId = '%0';
-	}
+    clearUser() {
+        this.#patientID = ''
+        this.#clinicianID = ''
+        this.#gender = ''
+        this.#dob = new Date()
+        this.#weight = 0
+        this.#height = 0
+    }
 
-	// Setters
-	setName(newValue: string) {
-		this.#name = newValue;
-	}
+    get patientID(): string {
+        return this.#patientID
+    }
 
-	setID(newValue: string) {
-		this.#id = newValue;
-	}
+    set patientID(value: string) {
+        this.#patientID = value
+    }
 
-	setGroupId(newGroupId: string) {
-		this.#groupId = newGroupId;
-	}
+    // Clinician ID
+    get clinicianID(): string {
+        return this.#clinicianID
+    }
 
-	getId(): string {
-		return this.#id;
-	}
+    set clinicianID(value: string) {
+        this.#clinicianID = value
+    }
 
-	getName(): string {
-		return this.#name;
-	}
+    // Gender
+    get gender(): string {
+        return this.#gender
+    }
 
-	getGroupId() {
-		return this.#groupId;
-	}
+    set gender(value: string) {
+        this.#gender = value
+    }
+
+    // Date of Birth
+    get dob(): Date {
+        return this.#dob
+    }
+
+    set dob(value: Date) {
+        if (value instanceof Date) {
+            this.#dob = value
+        } else {
+            throw new Error('dob must be a Date object')
+        }
+    }
+
+    // Weight
+    get weight(): number {
+        return this.#weight
+    }
+
+    set weight(value: number) {
+        this.#weight = value
+    }
+
+    // Height
+    get height(): number {
+        return this.#height
+    }
+
+    set height(value: number) {
+        this.#height = value
+    }
 }

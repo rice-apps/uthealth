@@ -1,6 +1,4 @@
-import { ScrollViewStyleReset } from 'expo-router/html'
-import { type PropsWithChildren } from 'react'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import {
     View,
     Text,
@@ -9,45 +7,39 @@ import {
     TextInput,
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from '../onboarding/OnboardingContext'
 
 // Gender Selection Screen Component
 const GenderScreen: React.FC = () => {
     const router = useRouter()
-    const navigateBack = () => {
-        // Logic to navigate to home screen
-        router.back()
-    }
-    const navigateNext = () => {
-        // Logic to navigate to home screen
-        router.push('./dobInput')
-    }
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
 
+    const [gender, setGender] = useState('')
     const [otherGender, setOtherGender] = useState('')
-
     const [showingNext, setShowingNext] = useState(false)
     const handleOptionSelect = (option: string) => {
         setShowingNext(true)
+        setGender(option)
+        setOtherGender('')
         console.log('Selected:', option)
-    }
-
-    const handleNext = () => {
-        // Add functionality for the "Next" button here
-        console.log('Next button pressed')
     }
 
     const handleOtherInputChange = (text: string) => {
         setShowingNext(true)
         setOtherGender(text)
+        setGender(text)
         console.log('Other Gender Input:', text)
-    }
-
-    {
-        /* Next Button */
     }
 
     return (
         <View style={styles.container}>
-            <TouchableOpacity onPress={navigateBack} style={styles.backButton}>
+            <TouchableOpacity
+                onPress={() => router.back()}
+                style={styles.backButton}
+            >
                 <Text style={styles.backButtonText}>{'< Assessment'}</Text>
             </TouchableOpacity>
 
@@ -76,7 +68,10 @@ const GenderScreen: React.FC = () => {
             {showingNext && (
                 <TouchableOpacity
                     style={styles.nextButton}
-                    onPress={navigateNext}
+                    onPress={() => {
+                        user.gender = gender
+                        router.push('./dobInput')
+                    }}
                 >
                     <Text style={styles.nextButtonText}>Next</Text>
                 </TouchableOpacity>
@@ -85,7 +80,6 @@ const GenderScreen: React.FC = () => {
     )
 }
 
-// Styles
 const styles = StyleSheet.create({
     container: {
         flex: 1,

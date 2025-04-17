@@ -11,12 +11,16 @@ import {
     Platform,
     Alert,
 } from 'react-native'
-import '../global.css'
-import React, { useState, useEffect } from 'react'
+import '../../global.css'
+import React, { useState, useEffect, useContext } from 'react'
 import { Link, useRouter } from 'expo-router'
 import { AppleAuthButton } from '../../components/AppleAuthButton'
 import supabase from '../utils/supabase'
 import * as Crypto from 'expo-crypto'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from '../onboarding/OnboardingContext'
 
 const EmailSignIn: React.FC = () => {
     const router = useRouter()
@@ -25,6 +29,7 @@ const EmailSignIn: React.FC = () => {
     const [isLoading, setIsLoading] = useState<boolean>(false)
     const [error, setError] = useState<string | null>(null)
     const [isIOS, setIsIOS] = useState<boolean>(false)
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
 
     useEffect(() => {
         setIsIOS(Platform.OS === 'ios')
@@ -76,13 +81,30 @@ const EmailSignIn: React.FC = () => {
                 throw authError
             }
 
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('patientID, clinicianID, onboarded')
+                .eq('user_uuid', data.user.id)
+                .maybeSingle()
+
+            if (userError) {
+                throw userError
+            }
+
+            if (!userData?.onboarded) {
+                user.patientID = userData?.patientID
+                user.clinicianID = userData?.clinicianID
+                router.push('./gender')
+                return
+            }
+
             Alert.alert(
                 'Signed in successfully!',
                 'You have successfully signed in',
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.replace('/exercises_list'),
+                        onPress: () => router.push('./exercises_list'),
                     },
                 ]
             )
