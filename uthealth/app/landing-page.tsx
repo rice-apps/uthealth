@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useContext } from 'react'
 import {
     Text,
     View,
@@ -12,6 +12,12 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useRouter } from 'expo-router'
 import '../global.css'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+
+const { user } = useContext(OnboardingContext) as OnboardingContextType
 
 const RANGE = 20
 const ITEM_WIDTH = 64
@@ -88,6 +94,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
         setSelectedCategory(categoryId)
         setSelectedExercise('')
     }
+
 
     return (
         <Modal

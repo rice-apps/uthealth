@@ -11,6 +11,14 @@ import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useRouter } from 'expo-router'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { LinearGradient } from 'expo-linear-gradient'
+import { useContext } from 'react'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+
+//update user's exercise list after each exercise
+const { user } = useContext(OnboardingContext) as OnboardingContextType
 
 const { width, height } = Dimensions.get('window')
 

@@ -1,5 +1,13 @@
 import { StyleSheet, View, Text, FlatList, Pressable, Image, SafeAreaView } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useContext } from "react";
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+
+//pull user's exercise progress for this screen
+const { user } = useContext(OnboardingContext) as OnboardingContextType
 
 export default function ExerciseScreen() {
   const exercises = [
@@ -23,13 +31,13 @@ export default function ExerciseScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-    <View style={styles.content}>
+      <View style={styles.content}>
 
-    <Text style={styles.header}>Week 3</Text>
+        <Text style={styles.header}>Week 3</Text>
 
-    <Text style={styles.subhead}>Level 3 - 15 minutes </Text>
+        <Text style={styles.subhead}>Level 3 - 15 minutes </Text>
 
-    <View style={styles.equipmentContainer}>
+        <View style={styles.equipmentContainer}>
           <Text style={styles.equipmentHeader}>Equipment Needed:</Text>
           <View style={styles.equipmentList}>
             {equipment.map((item, index) => (
@@ -40,31 +48,31 @@ export default function ExerciseScreen() {
           </View>
         </View>
 
-      <FlatList
-        data={exercises}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={styles.exerciseItem}>
-            {/* Exercise Image */}
-            <View style = {styles.exerciseImage}>
-              <Text style = {styles.imageText}>IMG</Text>
-              {/*<Image source={{ uri: item.image }} style={styles.exerciseImage} />*/}
-            </View>
-            
-            {/* Exercise Details */}
-            <View style={styles.exerciseDetails}>
-              <Text style={styles.exerciseName}>{item.name}</Text>
-              <Text style={styles.exerciseInfo}>{item.info}</Text>
-            </View>
+        <FlatList
+          data={exercises}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View style={styles.exerciseItem}>
+              {/* Exercise Image */}
+              <View style={styles.exerciseImage}>
+                <Text style={styles.imageText}>IMG</Text>
+                {/*<Image source={{ uri: item.image }} style={styles.exerciseImage} />*/}
+              </View>
 
-            {/* Three-Dot Menu Button */}
-            <Pressable style={styles.menuButton} onPress={() => console.log("Menu pressed!")}>
-              <Ionicons name="ellipsis-vertical" size={24} color="brown" />
-            </Pressable>
-          </View>
-        )}
-      />
-    </View>
+              {/* Exercise Details */}
+              <View style={styles.exerciseDetails}>
+                <Text style={styles.exerciseName}>{item.name}</Text>
+                <Text style={styles.exerciseInfo}>{item.info}</Text>
+              </View>
+
+              {/* Three-Dot Menu Button */}
+              <Pressable style={styles.menuButton} onPress={() => console.log("Menu pressed!")}>
+                <Ionicons name="ellipsis-vertical" size={24} color="brown" />
+              </Pressable>
+            </View>
+          )}
+        />
+      </View>
     </SafeAreaView>
   );
 }
@@ -89,7 +97,7 @@ const styles = StyleSheet.create({
     color: "#276893",
     borderWidth: 1,
     borderColor: "#276893",
- 
+
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 16,

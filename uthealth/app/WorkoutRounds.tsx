@@ -15,6 +15,15 @@ import { LinearGradient } from 'expo-linear-gradient'
 
 const { width, height } = Dimensions.get('window')
 
+import { useContext } from 'react'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+
+//update user's exercise list after each exercise
+const { user } = useContext(OnboardingContext) as OnboardingContextType
+
 const WorkoutRounds: React.FC = () => {
     const router = useRouter()
     const [playing, setPlaying] = useState(true)

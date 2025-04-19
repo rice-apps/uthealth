@@ -1,5 +1,13 @@
 import { StyleSheet, View, Text, FlatList, Pressable, Image, SafeAreaView } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useContext } from "react";
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+
+//update user's exercise progress after each exercise
+const { user } = useContext(OnboardingContext) as OnboardingContextType
 
 export default function ExerciseScreen() {
   const exercises = [
