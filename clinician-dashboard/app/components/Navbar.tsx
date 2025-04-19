@@ -1,5 +1,5 @@
 import Image from 'next/image'
-import Link from 'next/link'
+import AddClinicianDialog from './AddClinicianDialog'
 
 export default function Navbar() {
 	return (
@@ -10,9 +10,7 @@ export default function Navbar() {
 					<span className="ml-3 text-xl font-semibold text-black">UTHealth Neurology</span>
 				</div>
 				<div className="flex items-center">
-					<Link href="/" className="mr-6 text-[#327689] hover:text-[#265e6d] font-medium">
-						Dashboard
-					</Link>
+					<AddClinicianDialog />
 				</div>
 			</div>
 		</nav>
