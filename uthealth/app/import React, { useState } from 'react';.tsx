@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './App.css';
+import './App.tsx';
 
 const ratings = [
   { emoji: '😡', label: 'Very Very Hard', color: 'red' },

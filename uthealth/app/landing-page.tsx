@@ -13,10 +13,18 @@ import DateTimePickerModal from "react-native-modal-datetime-picker";
 import Icon from "react-native-vector-icons/MaterialIcons";
 import { useNavigation } from '@react-navigation/native';
 import "../global.css";
+import { createClient } from '@supabase/supabase-js';
 
 const RANGE = 20;
 const ITEM_WIDTH = 64;
 const ITEM_MARGIN_HORIZONTAL = 8;
+
+const supabaseUrl = 'https://gsohwqqwqdpitvrkhllr.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdzb2h3cXF3cWRwaXR2cmtobGxyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjc5MTk2MTksImV4cCI6MjA0MzQ5NTYxOX0.C_b3_mhustra9gzCMGsTISTf-J8wEklQMDArpwESRVM';
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+
+
 
 interface DateItem {
   id: string;
@@ -35,15 +43,25 @@ interface Activity {
 interface ActivityModalProps {
   visible: boolean;
   onClose: () => void;
-  onAddActivity: (activity: Omit<Activity, 'id'>) => void;
-  selectedDate: Date;
+  onAddActivity: (activity: {
+    name: string;
+    category: string;
+    // date: Date;
+    reps?: number;
+    weight?: number;
+    time?: number;
+  }) => void;
+  // selectedDate: Date;
 }
 
 // ActivityModal Component
 const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddActivity, selectedDate }) => {
+  
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedExercise, setSelectedExercise] = useState<string>("");
   const [selectedDuration, setSelectedDuration] = useState<string>("");
+  const[reps, setReps] = useState<number>(0);
+  const[weight, setWeight] = useState<number>(0);
 
   const categories = [
     { id: "1", name: "Strength Training", icon: "fitness-center" },
@@ -60,21 +78,73 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
   
   const aerobicExercises = ["Walk", "Run"];
   const durations = ["5 m", "15 m", "30 m", "45 m", "60 m", "Other"];
-
+  
   const handleAdd = () => {
+
     if (selectedCategory) {
       const category = categories.find(c => c.id === selectedCategory)?.name || '';
       
       if (selectedExercise && selectedDuration) {
-        onAddActivity({
-          name: `${selectedExercise} - ${selectedDuration}`,
+        
+        const isStrength = category === "Strength Training";
+
+        if (isStrength && reps && weight) {
+
+          onAddActivity({
+            name: selectedExercise,
+            category,
+            //date: selectedDate,
+            reps: parseInt(reps.toString(), 10),
+            weight: parseFloat(weight.toString())
+          });
+
+          setReps(0);
+          setWeight(0);
+          setSelectedCategory("");
+          setSelectedExercise("");
+          setSelectedDuration("");
+          onClose();
+
+        } else if (!isStrength && selectedDuration) {
+          onAddActivity({
+            name: selectedExercise,
+            category,
+            //date: selectedDate,
+            time: parseFloat(selectedDuration.toString()),
+          });
+          
+          setSelectedCategory("");
+          setSelectedExercise("");
+          setSelectedDuration("");
+          onClose();
+          
+        }
+
+        const handleCategorySelect = (categoryId: string) => {
+          setSelectedCategory(categoryId);
+          setSelectedExercise("");
+          setReps(0);
+          setWeight(0);
+          setSelectedDuration("");
+        };
+        
+      /* onAddActivity({
+          name: `${selectedExercise}`,
           category,
           date: selectedDate,
+          ...(isStrength
+            ? {
+                reps: 10,         // you can customize this or add inputs later
+                weight: 50,       // same here
+              }
+            : {
+                time: selectedDuration,
+              }),
         });
         setSelectedCategory("");
         setSelectedExercise("");
         setSelectedDuration("");
-        onClose();
+        onClose(); */
       }
     }
   };
@@ -83,6 +153,9 @@ const ActivityModal: React.FC<ActivityModalProps> = ({ visible, onClose, onAddAc
     setSelectedCategory(categoryId);
     setSelectedExercise("");
   };
+
+  
+
 
   return (
     <Modal
@@ -296,13 +369,136 @@ const LandingPage: React.FC = () => {
     }
   };
 
-  const handleAddActivity = (newActivity: Omit<Activity, 'id'>) => {
-    const activity = {
-      ...newActivity,
-      id: Date.now().toString(),
-    };
-    setActivities(prev => [...prev, activity]);
+  const checkConnection = async () => {
+    console.log("Testing Supabase connection...");
+    try {
+      // Try the simplest possible query
+      const { data, error } = await supabase
+        .from('activities')
+        .select('id')
+        .limit(1);
+      
+      console.log("Connection test result:", { data, error });
+      return { data, error };
+    } catch (e) {
+      console.error("Connection test exception:", e);
+      return { error: e };
+    }
   };
+  
+  // Call this function before trying to insert
+  (async () => {
+    await checkConnection();
+  })();
+  
+  const listTables = async () => {
+    console.log("Listing all tables in the database...");
+    try {
+      const { data, error } = await supabase
+        .from('pg_catalog.pg_tables')
+        .select('schemaname, tablename')
+        .eq('schemaname', 'public');
+      
+      console.log("Available tables:", data);
+      return { data, error };
+    } catch (e) {
+      console.error("Error listing tables:", e);
+      return { error: e };
+    }
+  };
+  
+  const handleAddActivity = async (newActivity: {
+    name: string;
+    category: string;
+    //date: Date;
+    reps?: number;
+    weight?: number;
+    time?: number;
+  }) => {
+    const { data, error } = await supabase
+      .from('activities')
+      .insert([{
+        name: newActivity.name,
+        category: newActivity.category,
+        //date: newActivity.date.toISOString(),
+        reps: newActivity.reps ?? null,
+        weight: newActivity.weight ?? null,
+        time: newActivity.time ?? null,
+      }]);
+
+      console.log(newActivity);
+  
+    if (error) {
+      console.error("Full Supabase error:", error);
+      /*console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      console.error("Error details:", error.details);*/
+      return;
+    }
+  
+    const savedActivity: Activity = {
+      id: data && data[0] ? data[0].id : '',
+      name: data[0].name,
+      category: data[0].category,
+      date: new Date(data[0].date),
+    };
+  
+    setActivities(prev => [...prev, savedActivity]);
+  };
+  
+
+  /* const handleAddActivity = async (newActivity: {
+  name: string;
+  category: string;
+  reps?: number;
+  weight?: number;
+  time?: number;
+}) => {
+  try {
+    // Prepare the activity object
+    const activityData = {
+      name: newActivity.name,
+      category: newActivity.category,
+      reps: newActivity.reps ?? null, // Use null if not provided
+      weight: newActivity.weight ?? null, // Use null if not provided
+      time: newActivity.time ?? null, // Use null if not provided
+    };
+
+    // Log activity data to check before sending to Supabase
+    console.log("Activity data being inserted: ", activityData);
+
+    // Insert the activity into the Supabase table
+    const { data, error } = await supabase
+      .from('activities')
+      .insert([activityData]);
+
+    // Check for error
+    if (error) {
+      console.error("Error adding activity to Supabase:", error.message);
+      return;
+    }
+
+    // Log the result from Supabase for debugging
+    console.log("Activity added successfully:", data);
+
+    // Prepare the saved activity object
+    const savedActivity: Activity = {
+      id: data[0].id,
+      name: data[0].name,
+      category: data[0].category,
+      date: new Date(data[0].date),
+    };
+
+    // Update the activities state
+    setActivities(prev => [...prev, savedActivity]);
+
+  } catch (error) {
+    console.error("Unexpected error during insert:", error.message);
+  }
+};
+
+*/
+
 
   const showDatePicker = () => setDatePickerVisibility(true);
   const hideDatePicker = () => setDatePickerVisibility(false);
@@ -529,7 +725,7 @@ const LandingPage: React.FC = () => {
           visible={isActivityModalVisible}
           onClose={() => setActivityModalVisible(false)}
           onAddActivity={handleAddActivity}
-          selectedDate={selectedDate}
+          //selectedDate={selectedDate}
         />
       </View>
     </SafeAreaView>
