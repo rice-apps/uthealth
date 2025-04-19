@@ -32,23 +32,39 @@ export default function RPEList() {
             <Text style={styles.title}>How hard was that workout?</Text>
             <View style={styles.container1}>
                 {rpeLevels.map((item, index) => (
-                    <TouchableOpacity
-                        key={item.value}
-                        style={styles.row}
-                        onPress={() => handleSelect(item.value)}
-                    >
-                        <Text style={[styles.icon, { color: item.color }]}>{item.icon}</Text>
-                        <View style={styles.lineContainer}>
-                            <View style={styles.rotate}>
-                                <View style={[styles.dot, selected === item.value && styles.activeDot]} />
-
+                    <View key={item.value}>
+                        <TouchableOpacity
+                            style={styles.row}
+                            onPress={() => handleSelect(item.value)}
+                        >
+                            <Text style={[styles.icon, { color: item.color }]}>{item.icon}</Text>
+                            <View style={styles.lineContainer}>
+                                <View style={styles.rotate}>
+                                    <View style={[styles.dot, selected === item.value && styles.activeDot]} />
+                                </View>
                             </View>
-                            {/* draw connector lines (except for last item) */}
-                            {index !== rpeLevels.length - 1 && <View style={styles.verticalLine} />}
-                        </View>
-                        <Text style={styles.label}>{item.label}</Text>
-                    </TouchableOpacity>
+                            <Text style={styles.label}>{item.label}</Text>
+                        </TouchableOpacity>
+                    </View>
                 ))}
+                <View style={styles.verticalLine} />
+                <View style={{position: 'absolute', left: 80, top: 40, zIndex: 1}}>≈
+                {rpeLevels.map((item, index) => (
+                    <View key={item.value}>
+                        <View
+                            style={styles.row}
+                        >
+                            <View style={styles.lineContainer}>
+                                <View style={styles.rotate}>
+                                    <View style={[styles.dot, selected === item.value && styles.activeDot]} />
+                                </View>
+                            </View>
+
+                            <Text style={styles.label}></Text>
+                        </View>
+                    </View>
+                ))}
+                </View>
             </View>
         </View>
     );
@@ -70,6 +86,13 @@ const styles = StyleSheet.create({
         paddingLeft: 0,
         alignItems: 'center',
     },
+    dotEraser: {
+        width: 10,
+        height: 10,
+        backgroundColor: '#327689',
+        zIndex: 1,
+        position: 'relative'
+      },
     container1: {
         paddingTop: 40,
         paddingLeft: 40,
@@ -81,6 +104,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginVertical: 18,
         width: '90%',
+        zIndex: 2,
+    },
+    containerLine: {
+        paddingLeft: 30,
+        position: 'absolute',
+        backgroundColor: "#AAFFAA",
     },
     icon: {
         fontSize: 18,
@@ -90,7 +119,9 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 22,
         marginLeft: 12,
-        flex: 1,
+        flex: 2,
+        fontWeight: 700,
+        color: "#898A8D"
     },
     lineContainer: {
         alignItems: 'center',
@@ -98,18 +129,20 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     verticalLine: {
-        alignItems: 'center',
+        left: 91,
         position: 'absolute',
-        top: 10,
+        top: 70,
         width: 3,
-        height: 61,
+        zIndex: 0,
+        height: 380,
         backgroundColor: '#327689',
     },
     dot: {
         width: 10,
         height: 10,
         backgroundColor: '#327689',
-        zIndex: 1,
+        zIndex: 2,
+        position: 'relative'
     },
     activeDot: {
         width: 9,
