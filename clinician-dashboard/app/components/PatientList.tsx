@@ -32,6 +32,10 @@ export default async function PatientList() {
 		return <div>Error loading patients</div>
 	}
 
+	if (!users || users.length === 0) {
+		return <div className="text-center p-8 text-gray-600">You have no patients with you. Share with them your clinician ID.</div>
+	}
+
 	return (
 		<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 			{users.map((user) => (
