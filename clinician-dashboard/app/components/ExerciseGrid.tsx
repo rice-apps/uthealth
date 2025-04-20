@@ -32,7 +32,7 @@ export default function ExerciseGrid({ exercises, patientId, weekId }: ExerciseG
 	}
 
 	const handleConfigComplete = () => {
-		router.push(`/patients/${patientId}`)
+		router.push('/')
 	}
 
 	if (showConfig) {
