@@ -51,7 +51,7 @@ export default function ExerciseGrid({ exercises, patientId, weekId }: ExerciseG
 			<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
 				<div className="w-full max-w-6xl mx-auto flex justify-between items-center">
 					<div className="text-gray-700">{selectedExercises.length} exercises selected</div>
-					<button onClick={handleSave} className={`px-6 py-3 rounded-lg font-medium text-white ${selectedExercises.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#327689] hover:bg-[#265E6E]'}`} disabled={selectedExercises.length === 0}>
+					<button onClick={handleSave} className={`px-6 py-3 rounded-lg cursor-pointer font-medium text-white ${selectedExercises.length === 0 ? 'bg-gray-300 cursor-not-allowed' : 'bg-[#327689] hover:bg-[#265E6E]'}`} disabled={selectedExercises.length === 0}>
 						Configure Exercises
 					</button>
 				</div>

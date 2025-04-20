@@ -243,7 +243,7 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 						<p className="text-sm font-medium text-gray-700 mb-2">Select Days:</p>
 						<div className="flex flex-wrap gap-2">
 							{dayOptions.map((day) => (
-								<button key={day.value} onClick={() => handleDayToggle(exercise.exercise_id, day.value)} className={`px-3 py-1 rounded-full text-sm font-medium ${exerciseConfigs[exercise.exercise_id]?.days?.includes(day.value) ? 'bg-[#327689] text-white' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+								<button key={day.value} onClick={() => handleDayToggle(exercise.exercise_id, day.value)} className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer ${exerciseConfigs[exercise.exercise_id]?.days?.includes(day.value) ? 'bg-[#327689] text-white' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
 									{day.label}
 								</button>
 							))}
@@ -278,7 +278,7 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 
 			<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
 				<div className="w-full max-w-6xl mx-auto flex justify-end">
-					<button onClick={handleSave} className="px-6 py-3 rounded-lg font-medium text-white bg-[#327689] hover:bg-[#265E6E]">
+					<button onClick={handleSave} className="px-6 py-3 rounded-lg font-medium text-white bg-[#327689] hover:bg-[#265E6E] cursor-pointer">
 						Save Prescriptions
 					</button>
 				</div>
