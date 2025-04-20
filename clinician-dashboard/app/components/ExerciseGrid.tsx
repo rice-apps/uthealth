@@ -32,11 +32,11 @@ export default function ExerciseGrid({ exercises, patientId, weekId }: ExerciseG
 	}
 
 	const handleConfigComplete = () => {
-		router.push('/')
+		router.push(`/`)
 	}
 
 	if (showConfig) {
-		return <ExerciseConfig selectedExercises={selectedExercises} patientId={patientId} weekIds={weekId.split(',')} onComplete={handleConfigComplete} />
+		return <ExerciseConfig selectedExercises={selectedExercises} patientId={patientId} weekId={weekId} onComplete={handleConfigComplete} />
 	}
 
 	return (

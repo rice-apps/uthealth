@@ -8,11 +8,18 @@ interface ExerciseConfigProps {
 		type: string
 	}[]
 	patientId: string
-	weekIds: string[]
+	weekId: string
 	onComplete: () => void
 }
 
-export default function ExerciseConfig({ selectedExercises, patientId, weekIds, onComplete }: ExerciseConfigProps) {
+export default function ExerciseConfig({ selectedExercises, patientId, weekId, onComplete }: ExerciseConfigProps) {
+	console.log('Received weekId:', weekId) // Debug log
+
+	// Ensure weekId is not undefined, decode it, and split it into an array
+	const decodedWeekId = decodeURIComponent(weekId || '')
+	const weekIds = decodedWeekId ? decodedWeekId.split(',') : []
+	console.log('Processed weekIds:', weekIds) // Debug log
+
 	const [exerciseConfigs, setExerciseConfigs] = useState<
 		Record<
 			string | number,
@@ -65,50 +72,125 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekIds, 
 	}
 
 	const getWeekDates = (weekIds: string[]) => {
-		const dates = weekIds.map((weekId) => {
-			const [year, weekNum] = weekId.split('-W')
-			const firstDayOfYear = new Date(parseInt(year), 0, 1)
-			const weekNumber = parseInt(weekNum)
+		console.log('Processing weeks:', weekIds) // Debug log
 
-			// Find first Monday of the year
-			while (firstDayOfYear.getDay() !== 1) {
-				firstDayOfYear.setDate(firstDayOfYear.getDate() + 1)
-			}
+		if (weekIds.length === 0) {
+			console.error('No weeks selected')
+			return { start: '', end: '' }
+		}
 
-			// Add weeks
-			const weekStart = new Date(firstDayOfYear)
-			weekStart.setDate(firstDayOfYear.getDate() + (weekNumber - 1) * 7)
-
-			const weekEnd = new Date(weekStart)
-			weekEnd.setDate(weekStart.getDate() + 6)
-
-			return { start: weekStart, end: weekEnd }
+		// Log each week ID being processed
+		weekIds.forEach((weekId, index) => {
+			console.log(`Week ${index + 1}: ${weekId}`)
 		})
 
-		// Find earliest start date and latest end date
-		const startDate = new Date(Math.min(...dates.map((d) => d.start.getTime())))
-		const endDate = new Date(Math.max(...dates.map((d) => d.end.getTime())))
+		// Create an array to store all the date ranges
+		const dateRanges: { start: Date; end: Date }[] = []
 
-		return {
+		// Process each week ID
+		for (const weekId of weekIds) {
+			try {
+				// Parse the ISO week format (e.g., "2025-W12")
+				const [yearStr, weekStr] = weekId.split('-W')
+				if (!yearStr || !weekStr) {
+					console.error(`Invalid week format: ${weekId}`)
+					continue
+				}
+
+				const year = parseInt(yearStr)
+				const week = parseInt(weekStr)
+
+				if (isNaN(year) || isNaN(week)) {
+					console.error(`Invalid year or week number: ${weekId}`)
+					continue
+				}
+
+				console.log(`Processing week ${weekId}: year=${year}, week=${week}`)
+
+				// Create a date for January 1st of the year
+				const firstDayOfYear = new Date(year, 0, 1)
+
+				// Calculate the first Monday of the year
+				const firstMonday = new Date(firstDayOfYear)
+				const daysToAdd = firstDayOfYear.getDay() === 0 ? 1 : 8 - firstDayOfYear.getDay()
+				firstMonday.setDate(firstDayOfYear.getDate() + daysToAdd)
+
+				console.log(`First Monday of ${year}: ${firstMonday.toISOString().split('T')[0]}`)
+
+				// Calculate the start of our target week
+				const weekStart = new Date(firstMonday)
+				weekStart.setDate(firstMonday.getDate() + (week - 1) * 7)
+
+				// Calculate the end of the week (6 days later)
+				const weekEnd = new Date(weekStart)
+				weekEnd.setDate(weekStart.getDate() + 6)
+
+				console.log(`Week ${weekId}:`, {
+					start: weekStart.toISOString().split('T')[0],
+					end: weekEnd.toISOString().split('T')[0],
+				})
+
+				dateRanges.push({ start: weekStart, end: weekEnd })
+			} catch (error) {
+				console.error(`Error processing week ${weekId}:`, error)
+			}
+		}
+
+		if (dateRanges.length === 0) {
+			console.error('No valid date ranges calculated')
+			return { start: '', end: '' }
+		}
+
+		// Log all calculated dates
+		console.log('All calculated dates:', dateRanges)
+
+		// Find earliest start date and latest end date
+		const startDate = new Date(Math.min(...dateRanges.map((d) => d.start.getTime())))
+		const endDate = new Date(Math.max(...dateRanges.map((d) => d.end.getTime())))
+
+		const result = {
 			start: startDate.toISOString().split('T')[0],
 			end: endDate.toISOString().split('T')[0],
 		}
+
+		console.log('Final date range:', result) // Debug log
+		return result
 	}
 
 	const handleSave = async () => {
 		try {
+			if (weekIds.length === 0) {
+				console.error('No weeks selected')
+				return
+			}
+
+			console.log('Starting save process with weekIds:', weekIds)
+			console.log('Selected exercises:', selectedExercises)
+			console.log('Exercise configs:', exerciseConfigs)
+
 			const supabase = createClient()
 
 			const prescriptions = []
 
 			// Calculate start and end dates once for all selected weeks
 			const { start, end } = getWeekDates(weekIds)
+			console.log('Date range for prescriptions:', { start, end }) // Debug log
 
+			if (!start || !end) {
+				console.error('Invalid date range')
+				return
+			}
+
+			// Create a prescription for each exercise with valid configuration
 			for (const exercise of selectedExercises) {
 				const config = exerciseConfigs[exercise.exercise_id]
-				if (!config || !config.days.length) continue
+				if (!config || !config.days.length) {
+					console.log(`Skipping exercise ${exercise.exercise_id} - no config or no days selected`)
+					continue
+				}
 
-				prescriptions.push({
+				// Log the prescription being created
+				const prescription = {
 					exercise_id: exercise.exercise_id,
 					patientID: parseInt(patientId),
 					start_date: start,
@@ -117,7 +199,10 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekIds, 
 					sets: config.sets || null,
 					reps: config.reps || null,
 					time: config.time || null,
-				})
+				}
+
+				console.log(`Creating prescription for exercise ${exercise.exercise_id}:`, prescription)
+				prescriptions.push(prescription)
 			}
 
 			if (prescriptions.length === 0) {
@@ -127,6 +212,7 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekIds, 
 
 			console.log('Saving prescriptions:', JSON.stringify(prescriptions, null, 2))
 
+			// Use upsert to handle existing records
 			const { data, error } = await supabase
 				.from('prescription')
 				.upsert(prescriptions, {
