@@ -66,6 +66,11 @@ export default function ExerciseCard({ exercise, onToggleSelect, initialSelected
 				{/* Description */}
 				{exercise.description && <p className="text-sm text-gray-600 mb-2">{exercise.description}</p>}
 
+				{/* Exercise Type */}
+				<div className="mb-2">
+					<span className="text-sm text-gray-500 capitalize">{exercise.type === 'rep-based' ? 'Repetition Based' : 'Time Based'}</span>
+				</div>
+
 				{/* Tags */}
 				<div className="flex flex-wrap gap-2">
 					{exercise.tags.map((tag, index) => (
