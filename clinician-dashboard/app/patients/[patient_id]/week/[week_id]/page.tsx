@@ -7,7 +7,7 @@ import { createClient } from '@/utils/supabase/server'
 type Params = {
 	params: {
 		patient_id: string
-		week_id: string //
+		week_id: string
 	}
 }
 
@@ -33,7 +33,8 @@ const getExercises = async (): Promise<Exercise[]> => {
 }
 
 export default async function WeekDetailPage({ params }: Params) {
-	const { patient_id, week_id } = params
+	// Await the params object
+	const { patient_id, week_id } = await params
 
 	// Decode the URL-encoded week_id and split by comma
 	const decodedWeekId = decodeURIComponent(week_id)
