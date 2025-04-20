@@ -358,10 +358,7 @@ const LandingPage: React.FC = () => {
         setLoading(true)
         try {
             const formattedDate = formatDateForSupabase(date)
-            const dayOfWeek = date.getDay() // Get day of week (0-6, where 0 is Sunday)
-            
-            // Get prescribed exercises for the selected date where the date is within range
-            // Using lte for start_date and gte for end_date for correct inclusive range
+            const dayOfWeek = date.getDay() 
             const { data, error } = await supabase
                 .from('prescription')
                 .select('prescription_id, exercise_id, start_date, end_date, days')
@@ -375,7 +372,6 @@ const LandingPage: React.FC = () => {
             }
             
             if (data && data.length > 0) {
-                // Filter prescriptions to those that include the current day of week
                 const filteredPrescriptions = data.filter(prescription => {
                     return isDayInArray(dayOfWeek, prescription.days);
                 });
@@ -386,7 +382,6 @@ const LandingPage: React.FC = () => {
                     return;
                 }
                 
-                // Get the details of the prescribed exercises
                 const exerciseIds = filteredPrescriptions.map(prescription => prescription.exercise_id);
                 
                 const { data: exerciseData, error: exerciseError } = await supabase
@@ -401,11 +396,10 @@ const LandingPage: React.FC = () => {
                 }
                 
                 if (exerciseData) {
-                    // Convert to activities format for display
                     const newActivities: Activity[] = exerciseData.map(exercise => ({
                         id: `${exercise.exercise_id}`,
                         name: exercise.name,
-                        category: 'Strength Training', // Default category
+                        category: 'Strength Training', 
                         date: date
                     }))
                     
@@ -436,7 +430,6 @@ const LandingPage: React.FC = () => {
     }, [])
 
     useEffect(() => {
-        // Fetch prescribed exercises whenever the selected date changes
         fetchPrescribedExercises(selectedDate)
     }, [selectedDate])
 
