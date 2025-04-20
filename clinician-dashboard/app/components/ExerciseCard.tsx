@@ -5,11 +5,12 @@ import { useState } from 'react'
 import { Check } from 'lucide-react'
 
 export type Exercise = {
-	id: string | number
+	exercise_id: string | number
 	name: string
 	tags: string[]
 	image_url?: string
 	description?: string
+	type: string
 }
 
 interface ExerciseCardProps {
@@ -27,7 +28,7 @@ export default function ExerciseCard({ exercise, onToggleSelect, initialSelected
 		const newSelected = !selected
 		setSelected(newSelected)
 		if (onToggleSelect) {
-			onToggleSelect(exercise.id, newSelected)
+			onToggleSelect(exercise.exercise_id, newSelected)
 		}
 	}
 
