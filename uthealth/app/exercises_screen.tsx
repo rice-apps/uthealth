@@ -14,17 +14,15 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import supabase from './utils/supabase';
 
 const { width, height } = Dimensions.get('window');
-
-// Base spacing unit
 const SPACING = 16;
 
 const ExerciseScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  // Extract the exerciseId as a number to ensure proper type matching with database
   const exerciseId = parseInt(params.exerciseId, 10);
   const exerciseName = params.exerciseName;
+  const patientId = parseInt(params.patientId, 10);
   
   const [exercise, setExercise] = useState(null);
   const [prescription, setPrescription] = useState({
@@ -35,135 +33,66 @@ const ExerciseScreen = () => {
   const [loading, setLoading] = useState(true);
   const [playing, setPlaying] = useState(false);
   const [videoId, setVideoId] = useState('');
-  const [prescriptionId, setPrescriptionId] = useState(null);
-  const [allPrescriptions, setAllPrescriptions] = useState([]);
 
-  // Fetch exercise and prescription data
   useEffect(() => {
-    if (!exerciseId) {
+    if (!exerciseId || !patientId) {
       setLoading(false);
       return;
     }
 
-    const fetchData = async () => {
+    const fetchExerciseData = async () => {
       try {
-        console.log(`Starting data fetch for exercise ID: ${exerciseId}`);
-        
-        // 1. Get exercise details first
+        // Fetch exercise details
         const { data: exerciseData, error: exerciseError } = await supabase
           .from('exercises')
           .select('*')
           .eq('exercise_id', exerciseId)
           .single();
 
-        if (exerciseError) {
-          console.error('Exercise fetch error:', exerciseError);
-          throw exerciseError;
-        }
-        
+        if (exerciseError) throw exerciseError;
+
         if (exerciseData) {
-          console.log('Exercise data found:', exerciseData);
           setExercise(exerciseData);
           
-          // Extract YouTube ID if video URL exists
+          // Extract YouTube ID
           if (exerciseData.video_url) {
             const id = extractYoutubeId(exerciseData.video_url);
             if (id) setVideoId(id);
           }
-          
-          // 2. Now fetch ALL prescriptions for this exercise to debug
-          const { data: allPrescriptionsData, error: allPrescriptionsError } = await supabase
-            .from('prescription')
-            .select('*')
-            .eq('exercise_id', exerciseId);
-            
-          if (allPrescriptionsError) {
-            console.error('All prescriptions fetch error:', allPrescriptionsError);
-          } else {
-            console.log(`Found ${allPrescriptionsData.length} total prescriptions for exercise ID ${exerciseId}:`, allPrescriptionsData);
-            setAllPrescriptions(allPrescriptionsData);
-          }
-          
-          // 3. Fetch prescriptions that are valid for today's date
+
+          // Fetch today's valid prescription for this patient and exercise
           const today = new Date().toISOString().split('T')[0];
-          console.log(`Today's date for filtering: ${today}`);
-          
-          const { data: validPrescriptions, error: validPrescriptionsError } = await supabase
+          const { data: validPrescriptions, error: prescriptionError } = await supabase
             .from('prescription')
             .select('*')
             .eq('exercise_id', exerciseId)
-            .lte('start_date', today)  // start_date <= today
-            .gte('end_date', today);   // end_date >= today
-          
-          if (validPrescriptionsError) {
-            console.error('Valid prescriptions fetch error:', validPrescriptionsError);
-            throw validPrescriptionsError;
-          }
-          
-          console.log(`Found ${validPrescriptions ? validPrescriptions.length : 0} valid prescriptions for today:`, validPrescriptions);
-          
-          // 4. Handle direct and latest prescription logic
-          if (exerciseId === 12) {
-            const { data: directPrescription, error: directError } = await supabase
-              .from('prescription')
-              .select('*')
-              .eq('prescription_id', 63)
-              .single();
-              
-            if (directError) {
-              console.error('Direct prescription fetch error:', directError);
-            } else if (directPrescription) {
-              console.log('Found direct prescription 63:', directPrescription);
-              setPrescriptionId(directPrescription.prescription_id);
-              setPrescription({
-                sets: directPrescription.sets,
-                reps: directPrescription.reps,
-                time: directPrescription.time
-              });
-            }
-          } else if (exerciseId === 44) {
-            const { data: directPrescription, error: directError } = await supabase
-              .from('prescription')
-              .select('*')
-              .eq('prescription_id', 64)
-              .single();
-              
-            if (directError) {
-              console.error('Direct prescription fetch error:', directError);
-            } else if (directPrescription) {
-              console.log('Found direct prescription 64:', directPrescription);
-              setPrescriptionId(directPrescription.prescription_id);
-              setPrescription({
-                sets: directPrescription.sets,
-                reps: directPrescription.reps,
-                time: directPrescription.time
-              });
-            }
-          } else if (validPrescriptions && validPrescriptions.length > 0) {
-            const sortedPrescriptions = [...validPrescriptions].sort((a, b) => 
-              b.prescription_id - a.prescription_id
-            );
-            const latest = sortedPrescriptions[0];
-            console.log('Using highest prescription ID:', latest);
-            setPrescriptionId(latest.prescription_id);
+            .eq('patient_id', patientId)
+            .lte('start_date', today)
+            .gte('end_date', today);
+
+          if (prescriptionError) throw prescriptionError;
+
+          if (validPrescriptions && validPrescriptions.length > 0) {
+            // Sort and get the latest prescription
+            const latestPrescription = validPrescriptions
+              .sort((a, b) => b.prescription_id - a.prescription_id)[0];
+
             setPrescription({
-              sets: latest.sets,
-              reps: latest.reps,
-              time: latest.time
+              sets: latestPrescription.sets,
+              reps: latestPrescription.reps,
+              time: latestPrescription.time
             });
-          } else {
-            console.log('No valid prescriptions found, using defaults');
           }
         }
       } catch (err) {
-        console.error('Error in data fetch:', err.message);
+        console.error('Error fetching exercise data:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchData();
-  }, [exerciseId]);
+    fetchExerciseData();
+  }, [exerciseId, patientId]);
 
   // Helpers
   const extractYoutubeId = (url) => {
