@@ -14,13 +14,13 @@ import {
 import '../../global.css'
 import React, { useState, useEffect, useContext } from 'react'
 import { Link, useRouter } from 'expo-router'
-import { AppleAuthButton } from '../../components/AppleAuthButton'
 import supabase from '../utils/supabase'
 import * as Crypto from 'expo-crypto'
 import {
     OnboardingContext,
     OnboardingContextType,
 } from '../onboarding/OnboardingContext'
+import { ScrollView } from 'react-native'
 
 const EmailSignIn: React.FC = () => {
     const router = useRouter()
@@ -117,68 +117,80 @@ const EmailSignIn: React.FC = () => {
     }
 
     return (
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <SafeAreaView style={styles.page}>
-                <Image
-                    // source={{ uri: '' }} // Replace with actual image if needed
-                    style={styles.logo}
-                />
-                <Text style={styles.title}>Sign in with your email</Text>
-                <View style={styles.formContainer}>
-                    {error && <Text style={styles.errorText}>{error}</Text>}
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Email address"
-                        value={email}
-                        onChangeText={setEmail}
-                        keyboardType="email-address"
-                        autoCapitalize="none"
-                    />
-
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Password"
-                        value={password}
-                        onChangeText={setPassword}
-                        secureTextEntry
-                    />
-
-                    <TouchableOpacity
-                        style={[
-                            styles.primaryButton,
-                            isLoading && styles.disabledButton,
-                        ]}
-                        onPress={signInWithEmail}
-                        disabled={isLoading}
+        <SafeAreaView style={styles.page}>
+            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+                <View style={styles.inner}>
+                    <ScrollView
+                        contentContainerStyle={styles.scrollContent}
+                        keyboardShouldPersistTaps="handled"
                     >
-                        <Text style={styles.primaryButtonText}>
-                            {isLoading ? 'Signing in...' : 'Sign In'}
+                        <View style={styles.logoContainer}>
+                            <Image
+                                source={require('../../assets/images/ut_health.png')}
+                                style={styles.logo}
+                                resizeMode="contain"
+                            />
+                        </View>
+                        <Text style={styles.title}>
+                            Sign in with your email
                         </Text>
-                    </TouchableOpacity>
+                        <View style={styles.formContainer}>
+                            {error && (
+                                <Text style={styles.errorText}>{error}</Text>
+                            )}
 
-                    <View style={styles.lineContainer}>
-                        <View style={styles.line} />
-                        <Text style={styles.orText}>or</Text>
-                        <View style={styles.line} />
-                    </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Email address"
+                                placeholderTextColor="lightgray"
+                                value={email}
+                                onChangeText={setEmail}
+                                keyboardType="email-address"
+                                autoCapitalize="none"
+                            />
 
-                    <View style={styles.socialButtonsContainer}>
-                        {isIOS && <AppleAuthButton />}
-                    </View>
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Password"
+                                placeholderTextColor="lightgray"
+                                value={password}
+                                onChangeText={setPassword}
+                                secureTextEntry
+                            />
 
-                    <Text style={styles.enrollText}>
-                        No Account?{' '}
-                        <Link
-                            href="./account-creation"
-                            style={styles.enrollLink}
-                        >
-                            Enroll Now
-                        </Link>
-                    </Text>
+                            <TouchableOpacity
+                                style={[
+                                    styles.primaryButton,
+                                    isLoading && styles.disabledButton,
+                                ]}
+                                onPress={signInWithEmail}
+                                disabled={isLoading}
+                            >
+                                <Text style={styles.primaryButtonText}>
+                                    {isLoading ? 'Signing in...' : 'Sign In'}
+                                </Text>
+                            </TouchableOpacity>
+
+                            <View style={styles.lineContainer}>
+                                <View style={styles.line} />
+                                <Text style={styles.orText}>or</Text>
+                                <View style={styles.line} />
+                            </View>
+
+                            <Text style={styles.enrollText}>
+                                No Account?{' '}
+                                <Link
+                                    href="./account-creation"
+                                    style={styles.enrollLink}
+                                >
+                                    Enroll Now
+                                </Link>
+                            </Text>
+                        </View>
+                    </ScrollView>
                 </View>
-            </SafeAreaView>
-        </TouchableWithoutFeedback>
+            </TouchableWithoutFeedback>
+        </SafeAreaView>
     )
 }
 
@@ -188,17 +200,27 @@ const darkOrange = '#844016'
 const styles = StyleSheet.create({
     page: {
         flex: 1,
+        backgroundColor: '#FFF',
+        height: '100%',
+    },
+    inner: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
         justifyContent: 'center',
         alignItems: 'center',
         padding: 16,
-        backgroundColor: '#FFF',
+        paddingBottom: 100,
+    },
+    logoContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 30,
     },
     logo: {
-        width: 100,
-        height: 100,
-        marginBottom: 20,
-        borderRadius: 10,
-        backgroundColor: '#e0e0e0',
+        width: 180,
+        height: 180,
     },
     title: {
         fontSize: 20,
@@ -214,14 +236,14 @@ const styles = StyleSheet.create({
         width: '100%',
         padding: 10,
         borderWidth: 1,
-        borderColor: darkOrange,
+        borderColor: '#4D8FAC',
         borderRadius: 8,
         marginBottom: 16,
         backgroundColor: '#FFF',
         color: darkOrange,
     },
     primaryButton: {
-        backgroundColor: darkOrange,
+        backgroundColor: '#4D8FAC',
         borderRadius: 20,
         paddingVertical: 12,
         paddingHorizontal: 32,

@@ -81,7 +81,7 @@ export default function HeightScreen() {
     return (
         <View style={styles.container}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
-                <Ionicons name="arrow-back" size={24} color="#C3592F" />
+                <Ionicons name="arrow-back" size={24} color="#4D8FAC" />
             </Pressable>
 
             <Text style={styles.question}>What is your current height?</Text>
@@ -206,10 +206,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '700',
         lineHeight: 19.68,
-        color: '#C3592F',
+        color: '#4D8FAC',
     },
     activeToggle: {
-        backgroundColor: '#C3592F',
+        backgroundColor: '#4D8FAC',
     },
     activeToggleText: {
         color: 'white',
@@ -229,12 +229,12 @@ const styles = StyleSheet.create({
         fontSize: 86,
         textAlign: 'center',
         marginBottom: -10,
-        color: '#C3592F',
+        color: '#4D8FAC',
         fontWeight: '700',
     },
     rulerText: {
         fontSize: 24,
-        color: '#C3592F',
+        color: '#4D8FAC',
         fontWeight: '600',
     },
     buttonContainer: {
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
         paddingBottom: 40,
     },
     continueButton: {
-        backgroundColor: '#C3592F',
+        backgroundColor: '#4D8FAC',
         padding: 20,
         borderRadius: 30,
         alignItems: 'center',

@@ -18,20 +18,11 @@ const GenderScreen: React.FC = () => {
     const { user } = useContext(OnboardingContext) as OnboardingContextType
 
     const [gender, setGender] = useState('')
-    const [otherGender, setOtherGender] = useState('')
     const [showingNext, setShowingNext] = useState(false)
     const handleOptionSelect = (option: string) => {
         setShowingNext(true)
         setGender(option)
-        setOtherGender('')
         console.log('Selected:', option)
-    }
-
-    const handleOtherInputChange = (text: string) => {
-        setShowingNext(true)
-        setOtherGender(text)
-        setGender(text)
-        console.log('Other Gender Input:', text)
     }
 
     return (
@@ -46,24 +37,27 @@ const GenderScreen: React.FC = () => {
             <Text style={styles.title}>Gender</Text>
 
             <View style={styles.optionsContainer}>
-                {['Male', 'Female'].map((option) => (
+                {['Male', 'Female', 'Prefer Not Say'].map((option) => (
                     <TouchableOpacity
                         key={option}
-                        style={styles.optionButton}
+                        style={
+                            option === gender
+                                ? styles.selected
+                                : styles.optionButton
+                        }
                         onPress={() => handleOptionSelect(option)}
                     >
-                        <Text style={styles.optionText}>{option}</Text>
+                        <Text
+                            style={
+                                option === gender
+                                    ? styles.selectedText
+                                    : styles.optionText
+                            }
+                        >
+                            {option}
+                        </Text>
                     </TouchableOpacity>
                 ))}
-
-                <TextInput
-                    style={styles.otherInput}
-                    placeholder="Other"
-                    placeholderTextColor="#888"
-                    value={otherGender}
-                    onChangeText={handleOtherInputChange}
-                    textAlign="center"
-                />
             </View>
             {showingNext && (
                 <TouchableOpacity
@@ -73,7 +67,7 @@ const GenderScreen: React.FC = () => {
                         router.push('./dobInput')
                     }}
                 >
-                    <Text style={styles.nextButtonText}>Next</Text>
+                    <Text style={styles.nextButtonText}>Continue</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -109,7 +103,17 @@ const styles = StyleSheet.create({
     },
     optionButton: {
         backgroundColor: '#e0e0e0',
-        borderRadius: 20,
+        borderRadius: 30,
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        marginVertical: 8,
+        width: '90%',
+        alignItems: 'center',
+        color: '#333',
+    },
+    selected: {
+        backgroundColor: '#4D8FAC',
+        borderRadius: 30,
         paddingVertical: 15,
         paddingHorizontal: 30,
         marginVertical: 8,
@@ -118,24 +122,18 @@ const styles = StyleSheet.create({
     },
     optionText: {
         fontSize: 18,
-        color: '#333',
+        color: 'black',
     },
-    otherInput: {
-        backgroundColor: '#e0e0e0',
-        borderRadius: 20,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        marginVertical: 8,
-        width: '90%',
+    selectedText: {
         fontSize: 18,
-        color: '#333',
+        color: 'white',
     },
     nextButton: {
-        backgroundColor: '#4CAF50', // Green background color for the button
-        borderRadius: 20,
+        backgroundColor: '#4D8FAC',
+        borderRadius: 25,
         paddingVertical: 15,
         paddingHorizontal: 30,
-        marginTop: 20, // Add space between the input and the button
+        marginTop: 30,
         width: '90%',
         alignItems: 'center',
     },

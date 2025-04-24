@@ -1,13 +1,5 @@
-import WheelPicker, {
-    ValueChangingEvent,
-} from '@quidone/react-native-wheel-picker'
-import React, { useContext, useRef, useState } from 'react'
-import {
-    View,
-    TouchableWithoutFeedback,
-    Dimensions,
-    TouchableOpacity,
-} from 'react-native'
+import { useContext, useRef, useState } from 'react'
+import { View, TouchableOpacity } from 'react-native'
 import { Text, StyleSheet, Pressable } from 'react-native'
 import { useRouter } from 'expo-router'
 import Ionicons from '@expo/vector-icons/Ionicons'
@@ -15,10 +7,11 @@ import {
     OnboardingContext,
     OnboardingContextType,
 } from '../onboarding/OnboardingContext'
+import ScrollButton from './scrollbutton'
 
 type PickerItem = {
     label: string
-    value: number
+    value: string | number
 }
 
 const DobInput = () => {
@@ -47,7 +40,6 @@ const DobInput = () => {
             value: currentYear - index,
         }
     })
-    const [{ width, height }, setSize] = useState({ width: 0, height: 0 })
 
     dayData.unshift({ label: 'Day', value: -1 })
     monthData.unshift({ label: 'Month', value: -1 })
@@ -57,172 +49,65 @@ const DobInput = () => {
     const [month, setMonth] = useState<PickerItem>(monthData[0])
     const [year, setYear] = useState<PickerItem>(yearData[0])
 
-    const monthValueRef = useRef(month)
-    const yearValueRef = useRef(year)
-    const dayValueRef = useRef(day)
+    const monthValueRef = useRef<PickerItem>(month)
+    const yearValueRef = useRef<PickerItem>(year)
+    const dayValueRef = useRef<PickerItem>(day)
 
     const [isYearVisible, setIsYearVisible] = useState<boolean>(false)
     const [isMonthVisible, setIsMonthVisible] = useState<boolean>(false)
     const [isDayVisible, setIsDayVisible] = useState<boolean>(false)
-
-    const handleYearButtonPress = () => {
-        updateVals()
-        setIsYearVisible(true)
-        setIsDayVisible(false)
-        setIsMonthVisible(false)
-    }
-    const handleMonthButtonPress = () => {
-        updateVals()
-        setIsMonthVisible(true)
-        setIsYearVisible(false)
-        setIsDayVisible(false)
-    }
-    const handleDayButtonPress = () => {
-        updateVals()
-        setIsDayVisible(true)
-        setIsMonthVisible(false)
-        setIsYearVisible(false)
-    }
-
-    const handleTapOutside = () => {
-        updateVals()
-        setIsDayVisible(false)
-        setIsMonthVisible(false)
-        setIsYearVisible(false)
-    }
-
-    const updateVals = () => {
-        setMonth(monthValueRef.current)
-        setYear(yearValueRef.current)
-        setDay(dayValueRef.current)
-    }
-
-    const handleYearValueChanging = (item: PickerItem) => {
-        yearValueRef.current = item
-    }
-
-    const handleMonthValueChanging = (item: PickerItem) => {
-        monthValueRef.current = item
-    }
-
-    const handleDayValueChanging = (item: PickerItem) => {
-        dayValueRef.current = item
-    }
 
     return (
         <View style={styles.container}>
             <Pressable style={styles.backButton} onPress={() => router.back()}>
                 <Ionicons name="arrow-back" size={24} color="#327689" />
             </Pressable>
-            <TouchableWithoutFeedback
-                onPress={handleTapOutside}
-                accessible={false}
-            >
-                <View
-                    style={[styles.wrapper, { width, height }]}
-                    onLayout={() => setSize(Dimensions.get('window'))}
-                />
-            </TouchableWithoutFeedback>
             <Text style={styles.title}>Date of Birth</Text>
             <View style={styles.row}>
-                <View></View>
-                <View></View>
-
-                <View style={styles.year}>
-                    {isMonthVisible && (
-                        <View style={styles.year}>
-                            <View style={styles.date}>
-                                <WheelPicker
-                                    data={monthData} // Data to be used by the picker
-                                    value={month.value} // Current value
-                                    onValueChanging={(
-                                        event: ValueChangingEvent<PickerItem>
-                                    ) => handleMonthValueChanging(event.item)} // Handle value change
-                                    renderOverlay={() => null}
-                                    itemTextStyle={styles.pickerItemText}
-                                />
-                            </View>
-                            <View style={styles.buttonNotTouchable}></View>
-                        </View>
-                    )}
-                    {!isMonthVisible && (
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleMonthButtonPress}
-                        >
-                            <Text
-                                style={styles.buttonText}
-                            >{`${month.label}`}</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <Text style={styles.buttonText}>/</Text>
-
-                <View style={styles.year}>
-                    {isDayVisible && (
-                        <View style={styles.year}>
-                            <View style={styles.date}>
-                                <WheelPicker
-                                    data={dayData} // Data to be used by the picker
-                                    value={day.value} // Current value
-                                    onValueChanging={(
-                                        event: ValueChangingEvent<PickerItem>
-                                    ) => handleDayValueChanging(event.item)} // Handle value change
-                                    renderOverlay={() => null}
-                                    itemTextStyle={styles.pickerItemText}
-                                />
-                            </View>
-                            <View style={styles.buttonNotTouchable}></View>
-                        </View>
-                    )}
-                    {!isDayVisible && (
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleDayButtonPress}
-                        >
-                            <Text
-                                style={styles.buttonText}
-                            >{`${day.label}`}</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
-                <Text style={styles.buttonText}>/</Text>
-
-                <View style={styles.year}>
-                    {isYearVisible && (
-                        <View style={styles.year}>
-                            <View style={styles.date}>
-                                <WheelPicker
-                                    data={yearData} // Data to be used by the picker
-                                    value={year.value} // Current value
-                                    onValueChanging={(
-                                        event: ValueChangingEvent<PickerItem>
-                                    ) => handleYearValueChanging(event.item)} // Handle value change
-                                    renderOverlay={() => null}
-                                    itemTextStyle={styles.pickerItemText}
-                                />
-                            </View>
-                            <View style={styles.buttonNotTouchable}></View>
-                        </View>
-                    )}
-                    {!isYearVisible && (
-                        <TouchableOpacity
-                            style={styles.button}
-                            onPress={handleYearButtonPress}
-                        >
-                            <Text
-                                style={styles.buttonText}
-                            >{`${year.label}`}</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                <ScrollButton
+                    key={0}
+                    data={monthData}
+                    isVisible={isMonthVisible}
+                    valueRef={monthValueRef}
+                    setIsVisible={setIsMonthVisible}
+                    value={month}
+                    setValue={(value: PickerItem) => setMonth(value)}
+                />
+                <ScrollButton
+                    key={1}
+                    data={dayData}
+                    isVisible={isDayVisible}
+                    valueRef={dayValueRef}
+                    setIsVisible={setIsDayVisible}
+                    value={day}
+                    setValue={(value: PickerItem) => setDay(value)}
+                />
+                <ScrollButton
+                    key={2}
+                    data={yearData}
+                    isVisible={isYearVisible}
+                    valueRef={yearValueRef}
+                    setIsVisible={setIsYearVisible}
+                    value={year}
+                    setValue={(value: PickerItem) => setYear(value)}
+                />
             </View>
             <View style={styles.container1}>
                 <TouchableOpacity
                     style={styles.button1}
                     onPress={() => {
-                        user.dob = new Date(year.value, month.value, day.value)
-                        router.push('./weight-input')
+                        if (
+                            year.value !== 'Year' &&
+                            month.value !== 'Month' &&
+                            day.value !== 'Day'
+                        ) {
+                            user.dob = new Date(
+                                Number(year.value),
+                                Number(month.value),
+                                Number(day.value)
+                            )
+                            router.push('./weight-input')
+                        }
                     }}
                 >
                     <Text style={styles.buttonText1}>Continue</Text>
