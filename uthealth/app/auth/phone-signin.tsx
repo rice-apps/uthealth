@@ -80,7 +80,7 @@ const EmailSignIn: React.FC = () => {
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.replace('/exercises_list'),
+                        onPress: () => router.replace('/landing-page'),
                     },
                 ]
             )

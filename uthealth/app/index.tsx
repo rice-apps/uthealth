@@ -5,13 +5,14 @@ import '../global.css'
 import { StyleSheet } from 'react-native'
 import { Slot, Redirect } from 'expo-router'
 import LandingPage from './landing-page'
-
+import ExerciseList from './exercises_list'
+import AccountCreation from './auth/account-creation'
+import SignIn from './auth/phone-signin'
 export default function Index() {
-  // Wrap the LandingPage with necessary context providers
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <UserProvider>
-        <LandingPage />
+        <SignIn/>
       </UserProvider>
     </GestureHandlerRootView>
   );

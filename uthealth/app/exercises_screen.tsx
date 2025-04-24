@@ -1,145 +1,344 @@
-import { StyleSheet, View, Text, FlatList, Pressable, Image, SafeAreaView } from "react-native";
-import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useState, useEffect } from 'react';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Dimensions
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import YoutubePlayer from 'react-native-youtube-iframe';
+import supabase from './utils/supabase';
 
-export default function ExerciseScreen() {
-  const exercises = [
-    {
-      id: "1",
-      name: "Quad Stretch",
-      info: "5 reps • Flexibility",
-      image: "image", // Replace with your image URL
-    },
-    {
-      id: "2",
-      name: "Push-ups",
-      info: "10 reps • Strength",
-      image: "images",
-    },
-  ];
+const { width, height } = Dimensions.get('window');
 
-  const equipment = ["Chair", "Table", "Yoga Mat"];
+// Base spacing unit
+const SPACING = 16;
+
+const ExerciseScreen = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Extract the exerciseId as a number to ensure proper type matching with database
+  const exerciseId = parseInt(params.exerciseId, 10);
+  const exerciseName = params.exerciseName;
+  
+  const [exercise, setExercise] = useState(null);
+  const [prescription, setPrescription] = useState({
+    sets: 3,
+    reps: 10,
+    time: 20
+  });
+  const [loading, setLoading] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [videoId, setVideoId] = useState('');
+  const [prescriptionId, setPrescriptionId] = useState(null);
+  const [allPrescriptions, setAllPrescriptions] = useState([]);
+
+  // Fetch exercise and prescription data
+  useEffect(() => {
+    if (!exerciseId) {
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        console.log(`Starting data fetch for exercise ID: ${exerciseId}`);
+        
+        // 1. Get exercise details first
+        const { data: exerciseData, error: exerciseError } = await supabase
+          .from('exercises')
+          .select('*')
+          .eq('exercise_id', exerciseId)
+          .single();
+
+        if (exerciseError) {
+          console.error('Exercise fetch error:', exerciseError);
+          throw exerciseError;
+        }
+        
+        if (exerciseData) {
+          console.log('Exercise data found:', exerciseData);
+          setExercise(exerciseData);
+          
+          // Extract YouTube ID if video URL exists
+          if (exerciseData.video_url) {
+            const id = extractYoutubeId(exerciseData.video_url);
+            if (id) setVideoId(id);
+          }
+          
+          // 2. Now fetch ALL prescriptions for this exercise to debug
+          const { data: allPrescriptionsData, error: allPrescriptionsError } = await supabase
+            .from('prescription')
+            .select('*')
+            .eq('exercise_id', exerciseId);
+            
+          if (allPrescriptionsError) {
+            console.error('All prescriptions fetch error:', allPrescriptionsError);
+          } else {
+            console.log(`Found ${allPrescriptionsData.length} total prescriptions for exercise ID ${exerciseId}:`, allPrescriptionsData);
+            setAllPrescriptions(allPrescriptionsData);
+          }
+          
+          // 3. Fetch prescriptions that are valid for today's date
+          const today = new Date().toISOString().split('T')[0];
+          console.log(`Today's date for filtering: ${today}`);
+          
+          const { data: validPrescriptions, error: validPrescriptionsError } = await supabase
+            .from('prescription')
+            .select('*')
+            .eq('exercise_id', exerciseId)
+            .lte('start_date', today)  // start_date <= today
+            .gte('end_date', today);   // end_date >= today
+          
+          if (validPrescriptionsError) {
+            console.error('Valid prescriptions fetch error:', validPrescriptionsError);
+            throw validPrescriptionsError;
+          }
+          
+          console.log(`Found ${validPrescriptions ? validPrescriptions.length : 0} valid prescriptions for today:`, validPrescriptions);
+          
+          // 4. Handle direct and latest prescription logic
+          if (exerciseId === 12) {
+            const { data: directPrescription, error: directError } = await supabase
+              .from('prescription')
+              .select('*')
+              .eq('prescription_id', 63)
+              .single();
+              
+            if (directError) {
+              console.error('Direct prescription fetch error:', directError);
+            } else if (directPrescription) {
+              console.log('Found direct prescription 63:', directPrescription);
+              setPrescriptionId(directPrescription.prescription_id);
+              setPrescription({
+                sets: directPrescription.sets,
+                reps: directPrescription.reps,
+                time: directPrescription.time
+              });
+            }
+          } else if (exerciseId === 44) {
+            const { data: directPrescription, error: directError } = await supabase
+              .from('prescription')
+              .select('*')
+              .eq('prescription_id', 64)
+              .single();
+              
+            if (directError) {
+              console.error('Direct prescription fetch error:', directError);
+            } else if (directPrescription) {
+              console.log('Found direct prescription 64:', directPrescription);
+              setPrescriptionId(directPrescription.prescription_id);
+              setPrescription({
+                sets: directPrescription.sets,
+                reps: directPrescription.reps,
+                time: directPrescription.time
+              });
+            }
+          } else if (validPrescriptions && validPrescriptions.length > 0) {
+            const sortedPrescriptions = [...validPrescriptions].sort((a, b) => 
+              b.prescription_id - a.prescription_id
+            );
+            const latest = sortedPrescriptions[0];
+            console.log('Using highest prescription ID:', latest);
+            setPrescriptionId(latest.prescription_id);
+            setPrescription({
+              sets: latest.sets,
+              reps: latest.reps,
+              time: latest.time
+            });
+          } else {
+            console.log('No valid prescriptions found, using defaults');
+          }
+        }
+      } catch (err) {
+        console.error('Error in data fetch:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [exerciseId]);
+
+  // Helpers
+  const extractYoutubeId = (url) => {
+    if (!url) return null;
+    const regex = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regex);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+
+  const formatTags = () => {
+    if (!exercise?.tags) return 'aerobic';
+    return Array.isArray(exercise.tags)
+      ? exercise.tags.join(', ').replace(/['"]/g, '')
+      : exercise.tags;
+  };
+
+  const isResistanceExercise = () => !exercise || exercise.type === 'resistance';
+
+  const togglePlay = () => setPlaying(!playing);
+  const goBack = () => { setPlaying(false); router.back(); };
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.secondaryNav}>
+          <TouchableOpacity onPress={goBack}>
+            <Icon name="arrow-back" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text>Loading...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const displaySets = prescription.sets ?? 3;
+  const displayReps = prescription.reps ?? 10;
+  const displayTime = prescription.time ?? 20;
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        <Text style={styles.header}>Week 3</Text>
-        <Text style={styles.subhead}>Level 3 - 15 minutes </Text>
-        <View style={styles.equipmentContainer}>
-          <Text style={styles.equipmentHeader}>Equipment Needed:</Text>
-          <View style={styles.equipmentList}>
-            {equipment.map((item, index) => (
-              <View key={index} style={styles.equipmentItem}>
-                <Text style={styles.equipmentText}>{item}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        <FlatList
-          data={exercises}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.exerciseItem}>
-              <Image source={{ uri: item.image }} style={styles.exerciseImage} />
-              
-              <View style={styles.exerciseDetails}>
-                <Text style={styles.exerciseName}>{item.name}</Text>
-                <Text style={styles.exerciseInfo}>{item.info}</Text>
-              </View>
-
-              <Pressable style={styles.menuButton} onPress={() => console.log("Menu pressed!")}>
-                <Ionicons name="ellipsis-vertical" size={24} color="brown" />
-              </Pressable>
+      <StatusBar barStyle="light-content" />
+      
+      <View style={styles.topNav}>
+        <TouchableOpacity onPress={goBack}>
+          <Text style={styles.navText}>index</Text>
+        </TouchableOpacity>
+        <View style={styles.navCenter} />
+        <View style={styles.navRight} />
+      </View>
+      
+      <View style={styles.secondaryNav}>
+        <TouchableOpacity onPress={goBack}>
+          <Icon name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+      </View>
+      
+      <View style={styles.contentWrapper}>
+        <View style={styles.videoContainer}>
+          {videoId ? (
+            <YoutubePlayer
+              height={height * 0.4}
+              width={width}
+              play={playing}
+              videoId={videoId}
+              onChangeState={state => state === 'ended' && setPlaying(false)}
+              forceAndroidAutoplay
+              initialPlayerParams={{ controls: false, modestbranding: true, showClosedCaptions: false, rel: false }}
+            />
+          ) : (
+            <View style={[styles.placeholderImage, { height: height * 0.4 }]}> 
+              <Icon name="fitness-center" size={60} color="#327689" />
+              <Text style={styles.placeholderText}>No video available</Text>
             </View>
           )}
-        />
+        </View>
+        
+        <View style={styles.infoContainer}>
+          <Text style={styles.exerciseTitle}>{exercise?.name || exerciseName}</Text>
+          
+          <View style={styles.metadataContainer}>
+            {isResistanceExercise() ? (
+              <>
+                <MetadataRow icon="fitness-center" text={`Sets: ${displaySets}`} />
+                <MetadataRow icon="repeat" text={`Reps: ${displayReps}`} />
+              </>
+            ) : (
+              <MetadataRow icon="schedule" text={`Duration: ${displayTime} mins`} />
+            )}
+            <MetadataRow icon="layers" text={`Type: ${formatTags()}`} />
+          </View>
+        </View>
+      </View>
+      
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.startButton} onPress={togglePlay} disabled={!videoId}>
+          <Text style={styles.startButtonText}>{playing ? 'Pause Workout' : 'Start Workout'}</Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
-}
+};
+
+// Helper component
+const MetadataRow = ({ icon, text }) => (
+  <View style={styles.metadataRow}>
+    <Icon name={icon} size={24} color="#327689" />
+    <Text style={styles.metadataText}>{text}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
-  equipmentContainer: {
-    marginBottom: 20,
+  container: { flex: 1, backgroundColor: 'white' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING,
+    paddingVertical: SPACING,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0'
   },
-  equipmentHeader: {
-    fontSize: 16,
-    fontWeight: "600",
-    marginBottom: 10,
-    color: "#555",
+  navCenter: { flex: 1, alignItems: 'center' },
+  navText: { color: '#327689', fontSize: 16 },
+  navRight: { width: SPACING * 2 },
+  secondaryNav: { backgroundColor: '#327689', padding: SPACING },
+  contentWrapper: { flex: 1, backgroundColor: '#f0f0f0' },
+  videoContainer: { width: '100%', backgroundColor: '#000' },
+  placeholderImage: {
+    width: '100%',
+    backgroundColor: '#d0d0d0',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  equipmentList: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
+  placeholderText: { marginTop: SPACING, fontSize: 16, color: '#666' },
+  infoContainer: { backgroundColor: '#e6f3f5', padding: SPACING, flex: 1 },
+  exerciseTitle: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#111',
+    marginBottom: SPACING * 2
   },
-  equipmentItem: {
-    backgroundColor: "#fffff",
-    color: "#276893",
-    borderWidth: 1,
-    borderColor: "#276893",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 16,
+  metadataContainer: { marginBottom: SPACING },
+  metadataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING
   },
-  equipmentText: {
-    color: "#276893",
-    fontSize: 14,
-  },
-  header: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#276893",
-  },
-  subhead: {
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  container: {
-    flex: 1,
-    padding: 0,
-    backgroundColor: "white",
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  exerciseItem: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#f4f4f4",
-    borderRadius: 10,
-    marginBottom: 15,
-    overflow: "hidden", // This ensures the image doesn't overflow the rounded corners
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
+  metadataText: { fontSize: 18, color: '#333', marginLeft: SPACING },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: SPACING,
+    paddingVertical: SPACING,
+    backgroundColor: 'rgba(230, 243, 245, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#d0d0d0',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 4
   },
-  exerciseImage: {
-    width: 120,
-    height: 80,
-    backgroundColor: 'black',
-    borderRadius: 8, // Remove any border radius from the image
+  startButton: {
+    backgroundColor: '#327689',
+    borderRadius: SPACING * 2,
+    padding: SPACING,
+    alignItems: 'center',
+    justifyContent: 'center'
   },
-  exerciseDetails: {
-    flex: 1,
-    paddingLeft: 12, // Add padding to the details container instead of the image
-    paddingTop: 10,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#333",
-  },
-  exerciseInfo: {
-    color: "#777",
-    fontSize: 14,
-    marginTop: 5,
-  },
-  menuButton: {
-    padding: 10,
-  },
+  startButtonText: { color: 'white', fontSize: 18, fontWeight: 'bold' },
 });
+
+export default ExerciseScreen;

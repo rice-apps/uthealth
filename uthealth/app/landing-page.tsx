@@ -475,6 +475,17 @@ const LandingPage: React.FC = () => {
         setSelectedDate(fullDate)
     }
 
+    // Navigate to exercise details
+    const handleExercisePress = (activity: Activity) => {
+        router.push({
+            pathname: "./exercises_screen",
+            params: { 
+                exerciseId: activity.id, 
+                exerciseName: activity.name 
+            }
+        });
+    }
+
     const getItemLayout = (_data: any, index: number) => ({
         length: ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL,
         offset: (ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL) * index,
@@ -556,8 +567,6 @@ const LandingPage: React.FC = () => {
                         />
                     </View>
 
-                    {/* Debug section removed */}
-
                     {/* Activities Section */}
                     <View className="px-4 mt-6">
                         <Text className="text-xl font-bold mb-4">
@@ -580,6 +589,7 @@ const LandingPage: React.FC = () => {
                                 {activities.map((activity) => (
                                     <TouchableOpacity
                                         key={activity.id}
+                                        onPress={() => handleExercisePress(activity)}
                                         onLongPress={() => setActivityToDelete(activity)}
                                         className="bg-white p-4 rounded-xl shadow-sm flex-row items-center"
                                     >
