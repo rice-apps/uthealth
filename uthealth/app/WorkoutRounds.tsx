@@ -165,16 +165,13 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                 setCurrentSet(nextIncompleteIndex + 1)
             }
             
-            // Restart video for the next set
             setShouldRestart(true)
         }
         
         setCompletedSets(newCompletedSets)
     }
 
-    // Function to log completed exercise to progress table
     const logExerciseProgress = async () => {
-        // Don't proceed if no exercise ID is available
         if (!exerciseId) {
             console.log('Cannot log progress: No exercise ID provided')
             return false
@@ -185,7 +182,6 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
             
             console.log(`Logging progress for exercise ${exerciseId} on ${exerciseDate}`)
             
-            // Check if this exercise was already completed on the same date
             const { data: existingProgress, error: checkError } = await supabase
                 .from('progress')
                 .select('*')
@@ -193,17 +189,16 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                 .eq('date', exerciseDate)
                 .single()
                 
-            if (checkError && checkError.code !== 'PGRST116') { // PGRST116 is "Did not return a single row"
+            if (checkError && checkError.code !== 'PGRST116') { 
                 console.error('Error checking existing progress:', checkError)
                 return false
             }
             
             if (existingProgress) {
                 console.log('Exercise was already logged for this date:', existingProgress)
-                return true // Already logged, consider it a success
+                return true 
             }
             
-            // First check if the patient exists in the database
             const { data: patientExists, error: patientError } = await supabase
                 .from('patient')
                 .select('id')
@@ -212,14 +207,11 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
             
             if (patientError && patientError.code !== 'PGRST116') {
                 console.error('Error checking patient:', patientError)
-                // Try to continue anyway
             }
             
-            // If patient doesn't exist, either create one or use a default
             let validPatientId = patientId
             if (!patientExists) {
                 console.log(`Patient with ID ${patientId} not found, using default`)
-                // Get the first available patient as fallback
                 const { data: firstPatient } = await supabase
                     .from('patient')
                     .select('id')
@@ -235,15 +227,12 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                 }
             }
             
-            // Insert new progress record - IMPORTANT: Use patient_id not patientID
             const { data, error } = await supabase
                 .from('progress')
                 .insert([
                     { 
                         exercise_id: exerciseId,
                         date: exerciseDate,
-                        patient_id: validPatientId, // Correct column name
-                        borgScore: borgScore
                     }
                 ])
                 
@@ -269,10 +258,8 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
             : timeRemaining === 0
             
         if (allCompleted && !isLoggingProgress) {
-            // Log the exercise progress first
             const logSuccess = await logExerciseProgress()
             
-            // Show completion message
             Alert.alert(
                 "Workout Complete!",
                 logSuccess 

@@ -16,14 +16,12 @@ import YoutubePlayer from 'react-native-youtube-iframe';
 import supabase from './utils/supabase';
 const { width, height } = Dimensions.get('window');
 
-// Base spacing unit
 const SPACING = 16;
 
 const ExerciseScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   
-  // Extract the exerciseId as a number to ensure proper type matching with database
   const exerciseId = parseInt(params.exerciseId, 10);
   const exerciseName = params.exerciseName;
   const exerciseDate = params.date || new Date().toISOString().split('T')[0];
@@ -41,7 +39,6 @@ const ExerciseScreen = () => {
   const [isCompleted, setIsCompleted] = useState(false);
   const [patientId, setPatientId] = useState(null);
   console.log(patientId)
-  // Fetch exercise and prescription data
   useEffect(() => {
     if (!exerciseId) {
       setLoading(false);
@@ -52,7 +49,6 @@ const ExerciseScreen = () => {
       try {
         console.log(`Fetching data for exercise ID: ${exerciseId}`);
         
-        // 1. Get exercise details
         const { data: exerciseData, error: exerciseError } = await supabase
           .from('exercises')
           .select('*')
@@ -68,21 +64,17 @@ const ExerciseScreen = () => {
           console.log('Exercise data found:', exerciseData);
           setExercise(exerciseData);
           
-          // Store video URL
           if (exerciseData.video_url) {
             setVideoUrl(exerciseData.video_url);
             
-            // Extract YouTube ID from URL
             const id = extractYoutubeId(exerciseData.video_url);
             if (id) setVideoId(id);
           }
         }
         
-        // 2. Get current patient ID (you would have a function for this in a real app)
         const currentPatientId = await getPatientId();
         setPatientId(currentPatientId);
         
-        // 3. Check if exercise is already completed on the selected date
         const { data: progressData, error: progressError } = await supabase
           .from('progress')
           .select('*')
@@ -97,8 +89,7 @@ const ExerciseScreen = () => {
           setIsCompleted(true);
         }
         
-        // 4. Get exercise prescription if available 
-        // This would be fetched from a prescriptions table based on your specific requirements
+      
         const { data: prescriptionData, error: prescriptionError } = await supabase
           .from('prescription')
           .select('*')
@@ -124,11 +115,9 @@ const ExerciseScreen = () => {
     fetchData();
   }, [exerciseId, exerciseDate]);
 
-  // Helper function to get patient ID - implement based on your app's authentication/user system
   const getPatientId = async () => {
     try {
-      // Example implementation - you would customize this based on your app
-      // For example, fetch from AsyncStorage, Redux store, Supabase auth, etc.
+     
       return 1; // Default patient ID
     } catch (error) {
       console.error('Error getting patient ID:', error);
@@ -150,7 +139,6 @@ const ExerciseScreen = () => {
       return exercise.tags.join(', ').replace(/['"]/g, '');
     }
     if (typeof exercise.tags === 'string') {
-      // Handle if it's a JSON string
       try {
         const parsed = JSON.parse(exercise.tags);
         if (Array.isArray(parsed)) {
@@ -170,20 +158,15 @@ const ExerciseScreen = () => {
   const togglePlay = () => setPlaying(!playing);
   const goBack = () => { setPlaying(false); router.back(); };
   
-  // Navigate to workout rounds with correct params
   const startWorkout = () => {
-    // Stop playing video if it's playing
     setPlaying(false);
     
-    // Determine exercise type (resistance or aerobic)
     const type = isResistanceExercise() ? 'resistance' : 'aerobic';
     
-    // Ensure all values are defined before converting to string
     const sets = prescription.sets || 3;
     const reps = prescription.reps || 10;
     const time = prescription.time || 20;
 
-    // Navigate to WorkoutRounds with all required params
     router.push({
       pathname: './WorkoutRounds',
       params: {
@@ -194,9 +177,9 @@ const ExerciseScreen = () => {
         exerciseName: exercise?.name || exerciseName,
         videoId: videoId || '',
         videoUrl: videoUrl || '',
-        exerciseDate: exerciseDate, // Pass the date to preserve when returning
-        exerciseId: exerciseId.toString(), // Pass the exercise ID for progress tracking
-        patientId: patientId?.toString() || '1' // Pass patient ID if available
+        exerciseDate: exerciseDate, 
+        exerciseId: exerciseId.toString(), 
+        patientId: patientId?.toString() || '1' 
         
       }
     });
@@ -320,7 +303,6 @@ const ExerciseScreen = () => {
   );
 };
 
-// Helper component
 const MetadataRow = ({ icon, text }) => (
   <View style={styles.metadataRow}>
     <Icon name={icon} size={24} color="#327689" />
@@ -383,7 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0f0f0',
   },
   scrollContent: {
-    paddingBottom: 100, // Add extra padding to account for the button container
+    paddingBottom: 100, 
   },
   videoContainer: { 
     width: '100%', 
