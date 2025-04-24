@@ -8,11 +8,12 @@ import LandingPage from './landing-page'
 import ExerciseList from './exercises_list'
 import AccountCreation from './auth/account-creation'
 import SignIn from './auth/phone-signin'
+import WorkoutRounds from './WorkoutRounds'
 export default function Index() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <UserProvider>
-        <SignIn/>
+        <LandingPage/>
       </UserProvider>
     </GestureHandlerRootView>
   );
