@@ -1,15 +1,23 @@
 import { useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface ExerciseConfigProps {
 	selectedExercises: {
 		exercise_id: string | number
 		name: string
-		type: string
 	}[]
 	patientId: string
 	weekId: string
 	onComplete: () => void
+}
+
+interface ExerciseConfig {
+	days: number[]
+	sets: number
+	reps?: number
+	time?: number
+	type: 'rep-based' | 'time-based'
 }
 
 export default function ExerciseConfig({ selectedExercises, patientId, weekId, onComplete }: ExerciseConfigProps) {
@@ -20,17 +28,7 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 	const weekIds = decodedWeekId ? decodedWeekId.split(',') : []
 	console.log('Processed weekIds:', weekIds) // Debug log
 
-	const [exerciseConfigs, setExerciseConfigs] = useState<
-		Record<
-			string | number,
-			{
-				days: number[]
-				sets?: number
-				reps?: number
-				time?: number
-			}
-		>
-	>({})
+	const [exerciseConfigs, setExerciseConfigs] = useState<Record<string | number, ExerciseConfig>>({})
 
 	const dayOptions = [
 		{ value: 0, label: 'Sun' },
@@ -44,8 +42,7 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 
 	const handleDayToggle = (exerciseId: string | number, day: number) => {
 		setExerciseConfigs((prev) => {
-			// Get existing config or create new one
-			const currentConfig = prev[exerciseId] || {}
+			const currentConfig = prev[exerciseId] || { days: [], sets: 0, type: 'rep-based' }
 			const currentDays = currentConfig.days || []
 
 			const newDays = currentDays.includes(day) ? currentDays.filter((d) => d !== day) : [...currentDays, day].sort()
@@ -67,6 +64,19 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 			[exerciseId]: {
 				...prev[exerciseId],
 				[field]: numValue,
+			},
+		}))
+	}
+
+	const handleTypeChange = (exerciseId: string | number, type: 'rep-based' | 'time-based') => {
+		setExerciseConfigs((prev) => ({
+			...prev,
+			[exerciseId]: {
+				...prev[exerciseId],
+				type,
+				// Reset the values when switching types but keep sets
+				reps: type === 'rep-based' ? prev[exerciseId]?.reps || 0 : undefined,
+				time: type === 'time-based' ? prev[exerciseId]?.time || 0 : undefined,
 			},
 		}))
 	}
@@ -197,8 +207,8 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 					end_date: end,
 					days: config.days,
 					sets: config.sets || null,
-					reps: config.reps || null,
-					time: config.time || null,
+					reps: config.type === 'rep-based' ? config.reps || null : null,
+					time: config.type === 'time-based' ? config.time || null : null,
 				}
 
 				console.log(`Creating prescription for exercise ${exercise.exercise_id}:`, prescription)
@@ -235,50 +245,69 @@ export default function ExerciseConfig({ selectedExercises, patientId, weekId, o
 
 	return (
 		<div className="space-y-8">
-			{selectedExercises.map((exercise) => (
-				<div key={exercise.exercise_id} className="bg-white rounded-lg shadow-md p-6">
-					<h3 className="text-xl font-semibold text-[#327689] mb-4">{exercise.name}</h3>
+			{selectedExercises.map((exercise) => {
+				const config = exerciseConfigs[exercise.exercise_id] || { days: [], sets: 0, type: 'rep-based' }
 
-					<div className="mb-6">
-						<p className="text-sm font-medium text-gray-700 mb-2">Select Days:</p>
-						<div className="flex flex-wrap gap-2">
-							{dayOptions.map((day) => (
-								<button key={day.value} onClick={() => handleDayToggle(exercise.exercise_id, day.value)} className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer ${exerciseConfigs[exercise.exercise_id]?.days?.includes(day.value) ? 'bg-[#327689] text-white' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-									{day.label}
-								</button>
-							))}
+				return (
+					<div key={exercise.exercise_id} className="bg-white rounded-lg shadow-md p-6">
+						<h3 className="text-xl font-semibold text-[#327689] mb-4">{exercise.name}</h3>
+
+						<div className="mb-6">
+							<p className="text-sm font-medium text-gray-700 mb-2">Select Days:</p>
+							<div className="flex flex-wrap gap-2">
+								{dayOptions.map((day) => (
+									<button
+										key={day.value}
+										onClick={() => handleDayToggle(exercise.exercise_id, day.value)}
+										className={`px-3 py-1 rounded-full text-sm font-medium cursor-pointer transition-colors 
+											${config.days?.includes(day.value) ? 'bg-[#327689] text-white hover:bg-[#265E6E]' : 'border border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+									>
+										{day.label}
+									</button>
+								))}
+							</div>
 						</div>
+
+						<Tabs defaultValue={config.type} className="w-full" onValueChange={(value) => handleTypeChange(exercise.exercise_id, value as 'rep-based' | 'time-based')}>
+							<TabsList className="mb-4">
+								<TabsTrigger value="rep-based">Rep Based</TabsTrigger>
+								<TabsTrigger value="time-based">Time Based</TabsTrigger>
+							</TabsList>
+
+							<div className="grid grid-cols-2 gap-4 mb-4">
+								<div>
+									<label htmlFor={`sets-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
+										Sets
+									</label>
+									<input type="number" id={`sets-${exercise.exercise_id}`} min="0" value={config.sets || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'sets', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689] cursor-text" />
+								</div>
+							</div>
+
+							<TabsContent value="rep-based">
+								<div>
+									<label htmlFor={`reps-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
+										Reps
+									</label>
+									<input type="number" id={`reps-${exercise.exercise_id}`} min="0" value={config.reps || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'reps', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689] cursor-text" />
+								</div>
+							</TabsContent>
+
+							<TabsContent value="time-based">
+								<div>
+									<label htmlFor={`time-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
+										Time (minutes)
+									</label>
+									<input type="number" id={`time-${exercise.exercise_id}`} min="0" value={config.time || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'time', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689] cursor-text" />
+								</div>
+							</TabsContent>
+						</Tabs>
 					</div>
-
-					{exercise.type === 'rep-based' ? (
-						<div className="grid grid-cols-2 gap-4">
-							<div>
-								<label htmlFor={`sets-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
-									Sets
-								</label>
-								<input type="number" id={`sets-${exercise.exercise_id}`} min="0" value={exerciseConfigs[exercise.exercise_id]?.sets || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'sets', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689]" />
-							</div>
-							<div>
-								<label htmlFor={`reps-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
-									Reps
-								</label>
-								<input type="number" id={`reps-${exercise.exercise_id}`} min="0" value={exerciseConfigs[exercise.exercise_id]?.reps || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'reps', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689]" />
-							</div>
-						</div>
-					) : (
-						<div>
-							<label htmlFor={`time-${exercise.exercise_id}`} className="block text-sm font-medium text-gray-700 mb-1">
-								Time (minutes)
-							</label>
-							<input type="number" id={`time-${exercise.exercise_id}`} min="0" value={exerciseConfigs[exercise.exercise_id]?.time || ''} onChange={(e) => handleValueChange(exercise.exercise_id, 'time', e.target.value)} className="border border-gray-300 rounded-md w-full p-2 text-black focus:ring-[#327689] focus:border-[#327689]" />
-						</div>
-					)}
-				</div>
-			))}
+				)
+			})}
 
 			<div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-10">
 				<div className="w-full max-w-6xl mx-auto flex justify-end">
-					<button onClick={handleSave} className="px-6 py-3 rounded-lg font-medium text-white bg-[#327689] hover:bg-[#265E6E] cursor-pointer">
+					<button onClick={handleSave} className="px-6 py-3 rounded-lg font-medium text-white bg-[#327689] hover:bg-[#265E6E] cursor-pointer transition-colors">
 						Save Prescriptions
 					</button>
 				</div>
