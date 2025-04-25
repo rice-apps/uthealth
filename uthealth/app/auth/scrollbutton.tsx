@@ -5,9 +5,9 @@ import {
     TouchableWithoutFeedback,
     View,
     Text,
+    GestureResponderEvent,
 } from 'react-native'
-import { useRouter } from 'expo-router'
-import React, { useState, useRef } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import WheelPicker from '@quidone/react-native-wheel-picker'
 
 type PickerItem = {
@@ -19,74 +19,75 @@ type PickerEvent = {
     item: PickerItem
 }
 
-const ScrollButton: React.FC = () => {
-    const data: PickerItem[] = [...Array(32).keys()].map((index) => ({
-        value: index,
-        label: index.toString(),
-    }))
-    data.unshift({ value: 'Month', label: 'Month' })
+type ScrollButtonProps = {
+    data: PickerItem[]
+    value: PickerItem
+    setValue: (value: PickerItem) => void
+    isVisible: boolean
+    setIsVisible: (value: boolean) => void
+    valueRef: React.MutableRefObject<PickerItem>
+}
 
+const ScrollButton: React.FC<ScrollButtonProps> = ({
+    data,
+    value,
+    setValue,
+    isVisible,
+    setIsVisible,
+    valueRef,
+}) => {
     const [{ width, height }, setSize] = useState<{
         width: number
         height: number
     }>({ width: 0, height: 0 })
-    const [value, setValue] = useState<string>('Month')
-    const [isYearVisible, setYearIsVisible] = useState<boolean>(false)
-    const valueRef = useRef<string>(value)
 
-    const handleValueChanged = ({ item: { value } }: PickerEvent) => {
-        valueRef.current = value.toString()
-        console.log(value)
-    }
-
-    const handleValueEnd = ({ item: { value } }: PickerEvent) => {
-        setValue(value.toString())
+    const handleValueEnd = ({ item }: PickerEvent) => {
+        setValue(item)
+        valueRef.current = item
     }
 
     const handleYearButtonPress = () => {
-        setYearIsVisible(true)
+        console.log(data)
+        setIsVisible(true)
     }
 
     const handleTapOutside = () => {
-        setValue(valueRef.current)
-        console.log('pressed')
-        setYearIsVisible(false)
+        setIsVisible(false)
     }
+
+    useEffect(() => {
+        console.log(data)
+    }, [])
 
     return (
         <View style={styles.year}>
-            <TouchableWithoutFeedback
-                onPress={handleTapOutside}
-                accessible={false}
-            >
-                <View
-                    style={[styles.wrapper, { width, height }]}
-                    onLayout={() => setSize(Dimensions.get('window'))}
-                />
-            </TouchableWithoutFeedback>
+            {isVisible && (
+                <>
+                    <TouchableWithoutFeedback onPress={handleTapOutside}>
+                        <View style={styles.fullscreenOverlay} />
+                    </TouchableWithoutFeedback>
 
-            {isYearVisible && (
-                <View style={styles.year}>
-                    <View style={styles.date}>
-                        <WheelPicker
-                            data={data}
-                            value={value}
-                            onValueChanging={handleValueChanged}
-                            onValueChanged={handleValueEnd}
-                            renderOverlay={() => null}
-                            itemTextStyle={styles.pickerItemText}
-                        />
+                    <View style={styles.year}>
+                        <View style={styles.date}>
+                            <WheelPicker
+                                data={data}
+                                value={value.value}
+                                onValueChanged={handleValueEnd}
+                                renderOverlay={() => null}
+                                itemTextStyle={styles.pickerItemText}
+                            />
+                        </View>
+                        <View style={styles.buttonNotTouchable}></View>
                     </View>
-                    <View style={styles.buttonNotTouchable}></View>
-                </View>
+                </>
             )}
 
-            {!isYearVisible && (
+            {!isVisible && (
                 <TouchableOpacity
                     style={styles.button}
                     onPress={handleYearButtonPress}
                 >
-                    <Text style={styles.buttonText}>{`${value}`}</Text>
+                    <Text style={styles.buttonText}>{value.label}</Text>
                 </TouchableOpacity>
             )}
         </View>
@@ -100,6 +101,9 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         alignItems: 'center',
         position: 'relative',
+    },
+    fullscreenOverlay: {
+        ...StyleSheet.absoluteFillObject, // { position:'absolute', top:0,left:0,right:0,bottom:0 }
     },
     title: {
         fontSize: 24,
@@ -125,7 +129,7 @@ const styles = StyleSheet.create({
         width: 200,
     },
     wrapper: {
-        backgroundColor: 'yellow', // Invisible background
+        backgroundColor: 'transparent', // Invisible background
         position: 'absolute', // Optional: keeps it in place
     },
     button: {
