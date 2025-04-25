@@ -1994,21 +1994,12 @@
     "@react-navigation/elements" "^2.2.5"
     color "^4.2.3"
 
-<<<<<<< HEAD
-"@react-navigation/core@^7.7.0":
-  version "7.7.0"
-  resolved "https://registry.npmjs.org/@react-navigation/core/-/core-7.7.0.tgz"
-  integrity sha512-u8GaO4QuX5VyfLk7s6dw10W/zl5c0NKOPocjYfWO4Wiaq4VROY00jjVcc1oYPEhDn5XXonx7U0l7jYYUA0cHlQ==
-  dependencies:
-    "@react-navigation/routers" "^7.3.1"
-=======
 "@react-navigation/core@^7.8.5":
   version "7.8.5"
   resolved "https://registry.npmjs.org/@react-navigation/core/-/core-7.8.5.tgz"
   integrity sha512-xDUXs6NI6ASiZgf53I7NPG0iJVGClPL5O3r8ddOCkS6fhVmPRun64m2zxUWnPcxtheFNTFfQ1IXH+gcenTcv/w==
   dependencies:
     "@react-navigation/routers" "^7.3.5"
->>>>>>> origin/main
     escape-string-regexp "^4.0.0"
     nanoid "3.3.8"
     query-string "^7.1.3"
@@ -2016,34 +2007,6 @@
     use-latest-callback "^0.2.1"
     use-sync-external-store "^1.2.2"
 
-<<<<<<< HEAD
-"@react-navigation/elements@^1.3.31":
-  version "1.3.31"
-  resolved "https://registry.npmjs.org/@react-navigation/elements/-/elements-1.3.31.tgz"
-  integrity sha512-bUzP4Awlljx5RKEExw8WYtif8EuQni2glDaieYROKTnaxsu9kEIA515sXQgUDZU4Ob12VoL7+z70uO3qrlfXcQ==
-
-"@react-navigation/elements@^2.2.5", "@react-navigation/elements@^2.3.1":
-  version "2.3.1"
-  resolved "https://registry.npmjs.org/@react-navigation/elements/-/elements-2.3.1.tgz"
-  integrity sha512-94lFVh/yjqPjahHo8zQBggooXVHr791Frpp0v/3idsn9J8tRrzTMQVgjDNNNbSPj7PZtvh/N9EiEq5sVf/vmxA==
-  dependencies:
-    color "^4.2.3"
-
-"@react-navigation/native-stack@^7.2.0", "@react-navigation/native-stack@^7.3.3":
-  version "7.3.3"
-  resolved "https://registry.npmjs.org/@react-navigation/native-stack/-/native-stack-7.3.3.tgz"
-  integrity sha512-piUO4MzYPrdiolrB/FKU25216MPQHd+90tIE2uwqioRLzEAcv78f0Pugi2Hp7RSOMmNjLIIGk6QMwZqr/ot9KQ==
-  dependencies:
-    "@react-navigation/elements" "^2.3.1"
-    warn-once "^0.1.1"
-
-"@react-navigation/native@^6.0.0", "@react-navigation/native@^7.0.14", "@react-navigation/native@^7.0.19":
-  version "7.0.19"
-  resolved "https://registry.npmjs.org/@react-navigation/native/-/native-7.0.19.tgz"
-  integrity sha512-6UDTFVM91FIUaXF5OZ7GHb+XZK6yAktqdTOBOtn3goIyafKz0OUo+ukxe+tPGpr+E9ZQjdZDCseIH6HOI/k8rw==
-  dependencies:
-    "@react-navigation/core" "^7.7.0"
-=======
 "@react-navigation/elements@^2.2.5", "@react-navigation/elements@^2.3.8":
   version "2.3.8"
   resolved "https://registry.npmjs.org/@react-navigation/elements/-/elements-2.3.8.tgz"
@@ -2065,23 +2028,15 @@
   integrity sha512-XcfygfHDfAgf2iC4rNBc67Yy0M1aYRGNeNKqja5AJPFZoBQhAEAxKCwHsH4g3qU0zIbzLCthoSl5107dBjoeZw==
   dependencies:
     "@react-navigation/core" "^7.8.5"
->>>>>>> origin/main
     escape-string-regexp "^4.0.0"
     fast-deep-equal "^3.1.3"
     nanoid "3.3.8"
     use-latest-callback "^0.2.1"
 
-<<<<<<< HEAD
-"@react-navigation/routers@^7.3.1":
-  version "7.3.1"
-  resolved "https://registry.npmjs.org/@react-navigation/routers/-/routers-7.3.1.tgz"
-  integrity sha512-d0hJi4eZJQB84JtHlA3HDR9VHoKDfyknSCdz/7a3Mdz1OJDZsvU+qjfK2c9mxNFd+ak/ekLhEkwwh8QtVF0faw==
-=======
 "@react-navigation/routers@^7.3.5":
   version "7.3.5"
   resolved "https://registry.npmjs.org/@react-navigation/routers/-/routers-7.3.5.tgz"
   integrity sha512-SBh/3G7pURIQfIwG4OnAfLvq0E4+l1Ii6577z22cIhWIrTOHFXg0rMxC7ft/amzxYn+iG2nYa4dONRd+xIs+yg==
->>>>>>> origin/main
   dependencies:
     nanoid "3.3.8"
 
@@ -4140,6 +4095,11 @@ expo-asset@~11.0.4:
     invariant "^2.2.4"
     md5-file "^3.2.3"
 
+expo-av@^15.0.2:
+  version "15.0.2"
+  resolved "https://registry.npmjs.org/expo-av/-/expo-av-15.0.2.tgz"
+  integrity sha512-AHIHXdqLgK1dfHZF0JzX3YSVySGMrWn9QtPzaVjw54FAzvXfMt4sIoq4qRL/9XWCP9+ICcCs/u3EcvmxQjrfcA==
+
 expo-constants@*, expo-constants@~17.0.3, expo-constants@~17.0.5, expo-constants@~17.0.7:
   version "17.0.7"
   resolved "https://registry.npmjs.org/expo-constants/-/expo-constants-17.0.7.tgz"
@@ -4155,17 +4115,10 @@ expo-crypto@^14.0.2:
   dependencies:
     base64-js "^1.3.0"
 
-<<<<<<< HEAD
-expo-file-system@~18.0.10:
-  version "18.0.10"
-  resolved "https://registry.npmjs.org/expo-file-system/-/expo-file-system-18.0.10.tgz"
-  integrity sha512-+GnxkI+J9tOzUQMx+uIOLBEBsO2meyoYHxd87m9oT9M//BpepYqI1AvYBH8YM4dgr9HaeaeLr7z5XFVqfL8tWg==
-=======
 expo-file-system@~18.0.11:
   version "18.0.11"
   resolved "https://registry.npmjs.org/expo-file-system/-/expo-file-system-18.0.11.tgz"
   integrity sha512-yDwYfEzWgPXsBZHJW2RJ8Q66ceiFN9Wa5D20pp3fjXVkzPBDwxnYwiPWk4pVmCa5g4X5KYMoMne1pUrsL4OEpg==
->>>>>>> origin/main
   dependencies:
     web-streams-polyfill "^3.3.2"
 
@@ -5774,6 +5727,7 @@ lighthouse-logger@^1.0.0:
     debug "^2.6.9"
     marky "^1.2.2"
 
+
 lightningcss-win32-x64-msvc@1.27.0:
   version "1.27.0"
   resolved "https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.27.0.tgz"
@@ -6988,16 +6942,12 @@ react-helmet-async@^1.3.0:
     react-fast-compare "^3.2.0"
     shallowequal "^1.1.0"
 
-<<<<<<< HEAD
-"react-is@^16.12.0 || ^17.0.0 || ^18.0.0", react-is@^16.13.1, react-is@^16.7.0:
-=======
 "react-is@^16.12.0 || ^17.0.0 || ^18.0.0", react-is@^18.0.0, react-is@^18.2.0, react-is@^18.3.1:
   version "18.3.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-18.3.1.tgz"
   integrity sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==
 
 react-is@^16.13.1:
->>>>>>> origin/main
   version "16.13.1"
   resolved "https://registry.npmjs.org/react-is/-/react-is-16.13.1.tgz"
   integrity sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==
@@ -8391,15 +8341,9 @@ use-latest-callback@^0.2.1:
   integrity sha512-7vI3fBuyRcP91pazVboc4qu+6ZqM8izPWX9k7cRnT8hbD5svslcknsh3S9BUhaK11OmgTV4oWZZVSeQAiV53SQ==
 
 use-sync-external-store@^1.2.2:
-<<<<<<< HEAD
-  version "1.2.2"
-  resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.2.2.tgz"
-  integrity sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==
-=======
   version "1.5.0"
   resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.5.0.tgz"
   integrity sha512-Rb46I4cGGVBmjamjphe8L/UnvJD+uPPtTkNvX5mZgqdbavhI4EbgIWJiIHXJ8bc/i9EQGPRh4DwEURJ552Do0A==
->>>>>>> origin/main
 
 util-deprecate@^1.0.2:
   version "1.0.2"

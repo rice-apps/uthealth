@@ -4,17 +4,31 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import '../global.css'
 import { StyleSheet } from 'react-native'
 import { Slot, Redirect } from 'expo-router'
-
+import LandingPage from './landing-page'
+import ExerciseList from './exercises_list'
+import AccountCreation from './auth/account-creation'
+import SignIn from './auth/phone-signin'
+import WorkoutRounds from './WorkoutRounds'
 export default function Index() {
+// <<<<<<< date
+//   return (
+//     <GestureHandlerRootView style={{ flex: 1 }}>
+//       <UserProvider>
+//         <LandingPage/>
+//       </UserProvider>
+//     </GestureHandlerRootView>
+//   );
+// =======
     return <Redirect href="/auth/phone-signin" />
+// >>>>>>> main
 }
 
 const styles = StyleSheet.create({
-    row: {
-        flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        width: '90%',
-    },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '90%',
+  },
 })

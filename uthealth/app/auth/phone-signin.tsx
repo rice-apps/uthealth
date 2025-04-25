@@ -104,7 +104,7 @@ const EmailSignIn: React.FC = () => {
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.push('./exercises_list'),
+                        onPress: () => router.replace('/landing-page'),
                     },
                 ]
             )

@@ -11,6 +11,7 @@ import {
 import DateTimePickerModal from 'react-native-modal-datetime-picker'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useRouter } from 'expo-router'
+import supabase from './utils/supabase'
 import '../global.css'
 
 const RANGE = 20
@@ -31,11 +32,25 @@ interface Activity {
     date: Date
 }
 
+interface Exercise {
+    exercise_id: number
+    name: string
+}
+
+interface Prescription {
+    prescription_id: number
+    exercise_id: number
+    start_date: string
+    end_date: string
+    days: any[] | null // Using any[] to handle possible different formats
+}
+
 interface ActivityModalProps {
     visible: boolean
     onClose: () => void
     onAddActivity: (activity: Omit<Activity, 'id'>) => void
     selectedDate: Date
+    exercises: Exercise[]
 }
 
 // ActivityModal Component
@@ -44,6 +59,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
     onClose,
     onAddActivity,
     selectedDate,
+    exercises,
 }) => {
     const [selectedCategory, setSelectedCategory] = useState<string>('')
     const [selectedExercise, setSelectedExercise] = useState<string>('')
@@ -54,33 +70,24 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
         { id: '2', name: 'Aerobics', icon: 'directions-run' },
     ]
 
-    const strengthExercises = [
-        'Bench Press',
-        'Squats',
-        'Deadlifts',
-        'Shoulder Press',
-        'Bicep Curls',
-    ]
-
+    const strengthExercises = exercises.map(ex => ex.name)
     const aerobicExercises = ['Walk', 'Run']
     const durations = ['5 m', '15 m', '30 m', '45 m', '60 m', 'Other']
 
     const handleAdd = () => {
-        if (selectedCategory) {
-            const category =
-                categories.find((c) => c.id === selectedCategory)?.name || ''
-
-            if (selectedExercise && selectedDuration) {
-                onAddActivity({
-                    name: `${selectedExercise} - ${selectedDuration}`,
-                    category,
-                    date: selectedDate,
-                })
-                setSelectedCategory('')
-                setSelectedExercise('')
-                setSelectedDuration('')
-                onClose()
-            }
+        if (selectedCategory && selectedExercise && selectedDuration) {
+            const category = categories.find((c) => c.id === selectedCategory)?.name || ''
+            
+            onAddActivity({
+                name: `${selectedExercise} - ${selectedDuration}`,
+                category,
+                date: selectedDate,
+            })
+            
+            setSelectedCategory('')
+            setSelectedExercise('')
+            setSelectedDuration('')
+            onClose()
         }
     }
 
@@ -117,9 +124,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                             {categories.map((category) => (
                                 <TouchableOpacity
                                     key={category.id}
-                                    onPress={() =>
-                                        handleCategorySelect(category.id)
-                                    }
+                                    onPress={() => handleCategorySelect(category.id)}
                                     className={`flex-1 flex-row items-center justify-center px-4 py-3 rounded-full border ${
                                         selectedCategory === category.id
                                             ? 'bg-[#327689] border-[#327689]'
@@ -129,11 +134,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                     <Icon
                                         name={category.icon}
                                         size={20}
-                                        color={
-                                            selectedCategory === category.id
-                                                ? '#fff'
-                                                : '#666'
-                                        }
+                                        color={selectedCategory === category.id ? '#fff' : '#666'}
                                     />
                                     <Text
                                         className={`ml-2 font-medium ${
@@ -161,22 +162,16 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                         {strengthExercises.map((exercise) => (
                                             <TouchableOpacity
                                                 key={exercise}
-                                                onPress={() =>
-                                                    setSelectedExercise(
-                                                        exercise
-                                                    )
-                                                }
+                                                onPress={() => setSelectedExercise(exercise)}
                                                 className={`p-3 rounded-xl border ${
-                                                    selectedExercise ===
-                                                    exercise
+                                                    selectedExercise === exercise
                                                         ? 'bg-[#327689] border-[#327689]'
                                                         : 'border-gray-200'
                                                 }`}
                                             >
                                                 <Text
                                                     className={`text-center font-medium ${
-                                                        selectedExercise ===
-                                                        exercise
+                                                        selectedExercise === exercise
                                                             ? 'text-white'
                                                             : 'text-gray-700'
                                                     }`}
@@ -192,9 +187,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                     {aerobicExercises.map((exercise) => (
                                         <TouchableOpacity
                                             key={exercise}
-                                            onPress={() =>
-                                                setSelectedExercise(exercise)
-                                            }
+                                            onPress={() => setSelectedExercise(exercise)}
                                             className={`p-3 rounded-xl border ${
                                                 selectedExercise === exercise
                                                     ? 'bg-[#327689] border-[#327689]'
@@ -203,8 +196,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                         >
                                             <Text
                                                 className={`text-center font-medium ${
-                                                    selectedExercise ===
-                                                    exercise
+                                                    selectedExercise === exercise
                                                         ? 'text-white'
                                                         : 'text-gray-700'
                                                 }`}
@@ -228,9 +220,7 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                                 {durations.map((duration) => (
                                     <TouchableOpacity
                                         key={duration}
-                                        onPress={() =>
-                                            setSelectedDuration(duration)
-                                        }
+                                        onPress={() => setSelectedDuration(duration)}
                                         className={`px-4 py-2 rounded-full border ${
                                             selectedDuration === duration
                                                 ? 'bg-[#327689] border-[#327689]'
@@ -263,39 +253,25 @@ const ActivityModal: React.FC<ActivityModalProps> = ({
                     {/* Add Button */}
                     <TouchableOpacity
                         onPress={handleAdd}
-                        disabled={
-                            !selectedCategory ||
-                            !selectedExercise ||
-                            !selectedDuration
-                        }
+                        disabled={!selectedCategory || !selectedExercise || !selectedDuration}
                         className={`rounded-xl py-3 px-6 flex-row justify-between items-center ${
-                            selectedCategory &&
-                            selectedExercise &&
-                            selectedDuration
+                            selectedCategory && selectedExercise && selectedDuration
                                 ? 'bg-[#327689]'
                                 : 'bg-gray-200'
                         }`}
                     >
                         <Text
                             className={`font-semibold ${
-                                selectedCategory &&
-                                selectedExercise &&
-                                selectedDuration
+                                selectedCategory && selectedExercise && selectedDuration
                                     ? 'text-white'
                                     : 'text-gray-400'
                             }`}
                         >
                             Add Activity
                         </Text>
-                        {selectedCategory &&
-                            selectedExercise &&
-                            selectedDuration && (
-                                <Icon
-                                    name="arrow-forward"
-                                    size={20}
-                                    color="#fff"
-                                />
-                            )}
+                        {selectedCategory && selectedExercise && selectedDuration && (
+                            <Icon name="arrow-forward" size={20} color="#fff" />
+                        )}
                     </TouchableOpacity>
                 </View>
             </View>
@@ -322,28 +298,128 @@ const generateSurroundingDates = (
     return dates
 }
 
+const formatDateForSupabase = (date: Date): string => {
+    return date.toISOString().split('T')[0]; // Format to 'YYYY-MM-DD'
+}
+
+// Helper function for checking day matches
+const isDayInArray = (dayValue: number, daysArray: any[] | null): boolean => {
+    // If days is null, include for all days
+    if (!daysArray) return true;
+    
+    // Convert day to string for comparison
+    const dayString = dayValue.toString();
+    
+    // Check if the day string exists in the array
+    return daysArray.some(day => {
+        // Remove any quotes and whitespace
+        const cleanDay = String(day).replace(/['"]/g, '').trim();
+        return cleanDay === dayString;
+    });
+}
+
 const LandingPage: React.FC = () => {
-    const [activityToDelete, setActivityToDelete] = useState<Activity | null>(
-        null
-    )
-    const [isDatePickerVisible, setDatePickerVisibility] =
-        useState<boolean>(false)
-    const [isActivityModalVisible, setActivityModalVisible] =
-        useState<boolean>(false)
-    const [selectedDate, setSelectedDate] = useState<Date>(
-        new Date(2024, 5, 21)
-    )
-    const [dates, setDates] = useState<DateItem[]>(
-        generateSurroundingDates(new Date(2024, 5, 21))
-    )
+    const [activityToDelete, setActivityToDelete] = useState<Activity | null>(null)
+    const [isDatePickerVisible, setDatePickerVisibility] = useState<boolean>(false)
+    const [isActivityModalVisible, setActivityModalVisible] = useState<boolean>(false)
+    const [selectedDate, setSelectedDate] = useState<Date>(new Date())
+    const [dates, setDates] = useState<DateItem[]>(generateSurroundingDates(new Date()))
     const [activities, setActivities] = useState<Activity[]>([])
+    const [exercises, setExercises] = useState<Exercise[]>([])
+    const [loading, setLoading] = useState<boolean>(true)
+    // Debug state removed
 
     const flatListRef = useRef<FlatList<DateItem>>(null)
     const middleIndex = RANGE
-
     const router = useRouter()
 
+    // Fetch exercises from Supabase
+    const fetchExercises = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('exercises')
+                .select('*')
+            
+            if (error) {
+                console.error('Error fetching exercises:', error)
+                return
+            }
+            
+            if (data) {
+                setExercises(data)
+            }
+        } catch (error) {
+            console.error('Error fetching exercises:', error)
+        }
+    }
+
+    // Fetch prescribed exercises for the selected date
+    const fetchPrescribedExercises = async (date: Date) => {
+        setLoading(true)
+        try {
+            const formattedDate = formatDateForSupabase(date)
+            const dayOfWeek = date.getDay() 
+            const { data, error } = await supabase
+                .from('prescription')
+                .select('prescription_id, exercise_id, start_date, end_date, days')
+                .lte('start_date', formattedDate)
+                .gte('end_date', formattedDate)
+            
+            if (error) {
+                console.error('Error fetching prescriptions:', error)
+                setLoading(false)
+                return
+            }
+            
+            if (data && data.length > 0) {
+                const filteredPrescriptions = data.filter(prescription => {
+                    return isDayInArray(dayOfWeek, prescription.days);
+                });
+                
+                if (filteredPrescriptions.length === 0) {
+                    setActivities([]);
+                    setLoading(false);
+                    return;
+                }
+                
+                const exerciseIds = filteredPrescriptions.map(prescription => prescription.exercise_id);
+                
+                const { data: exerciseData, error: exerciseError } = await supabase
+                    .from('exercises')
+                    .select('*')
+                    .in('exercise_id', exerciseIds)
+                
+                if (exerciseError) {
+                    console.error('Error fetching exercise details:', exerciseError)
+                    setLoading(false)
+                    return
+                }
+                
+                if (exerciseData) {
+                    const newActivities: Activity[] = exerciseData.map(exercise => ({
+                        id: `${exercise.exercise_id}`,
+                        name: exercise.name,
+                        category: 'Strength Training', 
+                        date: date
+                    }))
+                    
+                    setActivities(newActivities)
+                }
+            } else {
+                setActivities([])
+            }
+        } catch (error) {
+            console.error('Error fetching prescribed exercises:', error)
+        } finally {
+            setLoading(false)
+        }
+    }
+
     useEffect(() => {
+        // Initial data loading
+        fetchExercises()
+        fetchPrescribedExercises(selectedDate)
+        
         if (flatListRef.current) {
             flatListRef.current.scrollToIndex({
                 index: middleIndex,
@@ -352,6 +428,10 @@ const LandingPage: React.FC = () => {
             })
         }
     }, [])
+
+    useEffect(() => {
+        fetchPrescribedExercises(selectedDate)
+    }, [selectedDate])
 
     const handleDeleteActivity = () => {
         if (activityToDelete) {
@@ -395,29 +475,32 @@ const LandingPage: React.FC = () => {
         setSelectedDate(fullDate)
     }
 
+    // Navigate to exercise details
+    const handleExercisePress = (activity: Activity) => {
+        router.push({
+            pathname: "./exercises_screen",
+            params: { 
+                exerciseId: activity.id, 
+                exerciseName: activity.name 
+            }
+        });
+    }
+
     const getItemLayout = (_data: any, index: number) => ({
         length: ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL,
         offset: (ITEM_WIDTH + ITEM_MARGIN_HORIZONTAL) * index,
         index,
     })
 
-    const todayActivities = activities.filter(
-        (activity) =>
-            activity.date.toDateString() === selectedDate.toDateString()
-    )
-
     const renderCalendarCard = ({ item }: { item: DateItem }) => {
-        const isSelected =
-            item.fullDate.toDateString() === selectedDate.toDateString()
+        const isSelected = item.fullDate.toDateString() === selectedDate.toDateString()
         return (
             <TouchableOpacity
                 onPress={() => handleCardSelect(item.fullDate)}
                 className={`w-14 h-16 items-center justify-center mx-1 rounded-xl ${
                     isSelected ? 'bg-[#327689]' : 'bg-white'
                 } shadow-sm`}
-                style={{
-                    elevation: 2,
-                }}
+                style={{ elevation: 2 }}
             >
                 <Text
                     className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-[#FF715B]'}`}
@@ -489,7 +572,13 @@ const LandingPage: React.FC = () => {
                         <Text className="text-xl font-bold mb-4">
                             Today's Activities
                         </Text>
-                        {todayActivities.length === 0 ? (
+                        {loading ? (
+                            <View className="bg-white rounded-xl p-4 shadow-sm">
+                                <Text className="text-gray-500 text-center">
+                                    Loading activities...
+                                </Text>
+                            </View>
+                        ) : activities.length === 0 ? (
                             <View className="bg-white rounded-xl p-4 shadow-sm">
                                 <Text className="text-gray-500 text-center">
                                     No activities for today
@@ -497,32 +586,29 @@ const LandingPage: React.FC = () => {
                             </View>
                         ) : (
                             <View className="space-y-3">
-                                {todayActivities.map((activity) => (
+                                {activities.map((activity) => (
                                     <TouchableOpacity
                                         key={activity.id}
-                                        onLongPress={() =>
-                                            setActivityToDelete(activity)
-                                        }
+                                        onPress={() => handleExercisePress(activity)}
+                                        onLongPress={() => setActivityToDelete(activity)}
                                         className="bg-white p-4 rounded-xl shadow-sm flex-row items-center"
                                     >
                                         <View
                                             className={`w-10 h-10 rounded-full items-center justify-center ${
-                                                activity.category === 'Running'
+                                                activity.category === 'Aerobics'
                                                     ? 'bg-blue-100'
                                                     : 'bg-purple-100'
                                             }`}
                                         >
                                             <Icon
                                                 name={
-                                                    activity.category ===
-                                                    'Running'
+                                                    activity.category === 'Aerobics'
                                                         ? 'directions-run'
                                                         : 'fitness-center'
                                                 }
                                                 size={20}
                                                 color={
-                                                    activity.category ===
-                                                    'Running'
+                                                    activity.category === 'Aerobics'
                                                         ? '#1E88E5'
                                                         : '#327689'
                                                 }
@@ -537,9 +623,7 @@ const LandingPage: React.FC = () => {
                                             </Text>
                                         </View>
                                         <TouchableOpacity
-                                            onPress={() =>
-                                                setActivityToDelete(activity)
-                                            }
+                                            onPress={() => setActivityToDelete(activity)}
                                             className="p-2"
                                         >
                                             <Icon
@@ -560,7 +644,6 @@ const LandingPage: React.FC = () => {
                             Get Started
                         </Text>
                         <TouchableOpacity
-                            // onPress={() => navigation.navigate('Workout Plan')}
                             className="flex-row items-center justify-between bg-white rounded-lg py-4 px-4 mt-2 shadow-sm"
                         >
                             <Text
@@ -660,6 +743,7 @@ const LandingPage: React.FC = () => {
                     onClose={() => setActivityModalVisible(false)}
                     onAddActivity={handleAddActivity}
                     selectedDate={selectedDate}
+                    exercises={exercises}
                 />
             </View>
         </SafeAreaView>
