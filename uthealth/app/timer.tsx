@@ -5,38 +5,54 @@ import {
     Text,
     TouchableOpacity,
     StyleSheet,
-    TextInput,
     TouchableWithoutFeedback,
     Keyboard,
+    SafeAreaView,
 } from 'react-native'
-
-/** TopBar props */
-interface TopBarProps {
-    onSetTime: (minutes: number) => void
-}
-
-/** Constants */
-const PRESET_MINUTES = [5, 15, 30, 45, 60]
-const MS_PER_MINUTE = 60 * 1000
-const TICK_MS = 10 // 1 centisecond
+import { useRouter, useLocalSearchParams } from 'expo-router'
+import Icon from 'react-native-vector-icons/MaterialIcons'
+import supabase from './utils/supabase'
 
 /** Main TimerScreen */
 const TimerScreen: FC = () => {
-    // durations in ms
-    const [durationMs, setDurationMs] = useState<number>(
-        PRESET_MINUTES[0] * MS_PER_MINUTE
-    )
+    const router = useRouter()
+    const params = useLocalSearchParams()
+    
+    // Get params from route
+    const exerciseTimeParam = (params.exerciseTime as string) || '5'
+    const exerciseTime = parseInt(exerciseTimeParam, 10)
+    const exerciseId = params.exerciseId ? parseInt(params.exerciseId as string, 10) : null
+    const exerciseDate = (params.exerciseDate as string) || new Date().toISOString().split('T')[0]
+    const patientId = params.patientId ? parseInt(params.patientId as string, 10) : 1
+    const exerciseName = (params.exerciseName as string) || 'Exercise'
+    
+    // Constants
+    const MS_PER_MINUTE = 60 * 1000
+    const TICK_MS = 10 // 1 centisecond
+
+    // State
+    const [durationMs, setDurationMs] = useState<number>(exerciseTime * MS_PER_MINUTE)
     const [timeLeft, setTimeLeft] = useState<number>(durationMs)
     const [running, setRunning] = useState<boolean>(false)
+    const [isComplete, setIsComplete] = useState<boolean>(false)
+    const [isLoggingProgress, setIsLoggingProgress] = useState<boolean>(false)
 
-    // tick effect
+    // When timer completes, log exercise and navigate
     useEffect(() => {
-        let id: any
+        if (timeLeft === 0 && !isComplete) {
+            setIsComplete(true)
+            setRunning(false)
+            logExerciseProgress()
+        }
+    }, [timeLeft])
+
+    // Timer effect
+    useEffect(() => {
+        let id: NodeJS.Timeout
         if (running && timeLeft > 0) {
             id = setInterval(() => {
                 setTimeLeft((prev) => {
                     const next = Math.max(prev - TICK_MS, 0)
-                    if (next === 0) setRunning(false)
                     return next
                 })
             }, TICK_MS)
@@ -44,7 +60,7 @@ const TimerScreen: FC = () => {
         return () => clearInterval(id)
     }, [running])
 
-    // derive display
+    // Format time display
     const mins = Math.floor(timeLeft / MS_PER_MINUTE)
     const secs = Math.floor((timeLeft % MS_PER_MINUTE) / 1000)
     const centis = Math.floor((timeLeft % 1000) / 10)
@@ -55,203 +71,268 @@ const TimerScreen: FC = () => {
 
     const progress = timeLeft / durationMs
 
-    // circle math
+    // Circle math for progress indicator
     const R = 45
     const C = 2 * Math.PI * R
     const angle = 2 * Math.PI * progress
-    const markerX = 50 + R * Math.cos(angle)
-    const markerY = 50 + R * Math.sin(angle)
+    const markerX = 50 + R * Math.cos(angle - Math.PI/2)
+    const markerY = 50 + R * Math.sin(angle - Math.PI/2)
 
-    const handleSetTime = (minutes: number) => {
-        const ms = minutes * MS_PER_MINUTE
-        setDurationMs(ms)
-        setTimeLeft(ms)
-        setRunning(false)
+    // Log exercise progress and navigate back to landing page
+    const logExerciseProgress = async () => {
+        if (!exerciseId) {
+            console.log('Cannot log progress: No exercise ID provided')
+            navigateToLandingPage()
+            return false
+        }
+
+        try {
+            setIsLoggingProgress(true)
+            
+            console.log(`Logging progress for exercise ${exerciseId} on ${exerciseDate}`)
+            
+            const { data: existingProgress, error: checkError } = await supabase
+                .from('progress')
+                .select('*')
+                .eq('exercise_id', exerciseId)
+                .eq('date', exerciseDate)
+                .single()
+                
+            if (checkError && checkError.code !== 'PGRST116') { 
+                console.error('Error checking existing progress:', checkError)
+                navigateToLandingPage()
+                return false
+            }
+            
+            if (existingProgress) {
+                console.log('Exercise was already logged for this date:', existingProgress)
+                navigateToLandingPage()
+                return true
+            }
+            
+            const { data, error } = await supabase
+                .from('progress')
+                .insert([{ 
+                    exercise_id: exerciseId,
+                    date: exerciseDate,
+                }])
+                
+            if (error) {
+                console.error('Error logging progress:', error)
+                navigateToLandingPage()
+                return false
+            }
+            
+            console.log('Progress logged successfully:', data)
+            navigateToLandingPage()
+            return true
+            
+        } catch (error) {
+            console.error('Exception while logging progress:', error)
+            navigateToLandingPage()
+            return false
+        } finally {
+            setIsLoggingProgress(false)
+        }
+    }
+
+    // Navigate back to landing page
+    const navigateToLandingPage = () => {
+        if (exerciseDate) {
+            router.replace({
+                pathname: '/',
+                params: { date: exerciseDate }
+            })
+        } else {
+            router.replace('/')
+        }
     }
 
     return (
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-            <View style={styles.container}>
-                <View style={styles.timerContainer}>
-                    <Svg width={300} height={300} viewBox="0 0 100 100">
-                        <Circle
-                            cx="50"
-                            cy="50"
-                            r={R}
-                            stroke="#E0E0E0"
-                            strokeWidth="6"
-                            fill="none"
-                        />
-                        <Circle
-                            cx="50"
-                            cy="50"
-                            r={R}
-                            stroke="#2C7A7B"
-                            strokeWidth="6"
-                            fill="none"
-                            strokeDasharray={C}
-                            strokeDashoffset={C - C * progress}
-                            strokeLinecap="butt"
-                        />
-                        <Circle
-                            cx={markerX}
-                            cy={markerY}
-                            r={3}
-                            fill="#FFFFFF"
-                            stroke="gray"
-                        />
-                        <SvgText
-                            x="50"
-                            y="50"
-                            textAnchor="middle"
-                            alignmentBaseline="middle"
-                            fontSize="10" // ~36px in a 100x100 viewBox
-                            fill="#844016"
-                            fontWeight="500"
-                        >
-                            {formatTime(mins, secs, centis)}
-                        </SvgText>
-                    </Svg>
-                </View>
+        <SafeAreaView style={styles.container}>
+            <View style={styles.headerContainer}>
+                <Text style={styles.headerText}>timer</Text>
+            </View>
+            
+            <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+                <View style={styles.content}>
+                    <View style={styles.timerContainer}>
+                        <Svg width={300} height={300} viewBox="0 0 100 100">
+                            <Circle
+                                cx="50"
+                                cy="50"
+                                r={R}
+                                stroke="#E0E0E0"
+                                strokeWidth="6"
+                                fill="none"
+                            />
+                            <Circle
+                                cx="50"
+                                cy="50"
+                                r={R}
+                                stroke="#337689"
+                                strokeWidth="6"
+                                fill="none"
+                                strokeDasharray={C}
+                                strokeDashoffset={C - C * progress}
+                                strokeLinecap="butt"
+                                transform="rotate(-90, 50, 50)"
+                            />
+                            <Circle
+                                cx={markerX}
+                                cy={markerY}
+                                r={3}
+                                fill="#FFFFFF"
+                                stroke="#999999"
+                            />
+                            <SvgText
+                                x="50"
+                                y="50"
+                                textAnchor="middle"
+                                alignmentBaseline="middle"
+                                fontSize="14" 
+                                fill="#844016"
+                                fontWeight="500"
+                            >
+                                {formatTime(mins, secs, centis)}
+                            </SvgText>
+                        </Svg>
+                        <Text style={styles.exerciseNameText}>{exerciseName}</Text>
+                    </View>
 
-                <View style={styles.buttonRow}>
-                    {!running ? (
+                    <View style={styles.buttonContainer}>
+                        {!running ? (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.startButton}
+                                    onPress={() => setRunning(true)}
+                                >
+                                    <Text style={styles.buttonText}>Start</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.nextButton}
+                                    onPress={() => {
+                                        // Log exercise progress and navigate to landing page
+                                        logExerciseProgress()
+                                    }}
+                                >
+                                    <Text style={styles.buttonText}>Next</Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            <>
+                                <TouchableOpacity
+                                    style={styles.pauseButton}
+                                    onPress={() => setRunning(false)}
+                                >
+                                    <Text style={styles.buttonText}>Pause</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={styles.resetButton}
+                                    onPress={() => {
+                                        setRunning(false)
+                                        setTimeLeft(durationMs)
+                                    }}
+                                >
+                                    <Text style={styles.buttonText}>Reset</Text>
+                                </TouchableOpacity>
+                            </>
+                        )}
+                    </View>
+
+                    {isComplete && (
                         <TouchableOpacity
-                            style={styles.startButton}
-                            onPress={() => setRunning(true)}
+                            style={styles.doneButton}
+                            onPress={navigateToLandingPage}
                         >
-                            <Text style={styles.buttonText}>Start</Text>
+                            <Text style={styles.buttonText}>Done</Text>
                         </TouchableOpacity>
-                    ) : (
-                        <>
-                            <TouchableOpacity
-                                style={styles.stopButton}
-                                onPress={() => {
-                                    setRunning(false)
-                                    setTimeLeft(durationMs)
-                                }}
-                            >
-                                <Text style={styles.buttonText}>Reset</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                                style={styles.pauseButton}
-                                onPress={() => setRunning(false)}
-                            >
-                                <Text style={styles.buttonText}>Pause</Text>
-                            </TouchableOpacity>
-                        </>
                     )}
                 </View>
-            </View>
-        </TouchableWithoutFeedback>
+            </TouchableWithoutFeedback>
+        </SafeAreaView>
     )
 }
 
 export default TimerScreen
 
-/** Styles */
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingBottom: 40,
+        backgroundColor: '#FFFFFF',
     },
-    topBar: {
-        width: '90%',
-        flexDirection: 'row',
+    headerContainer: {
+        paddingTop: 40,
         alignItems: 'center',
-        justifyContent: 'space-between',
-        marginTop: 100,
-        padding: 10,
-        backgroundColor: '#fff',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 6,
-        borderRadius: 10,
+        paddingBottom: 20,
     },
-    presetRow: {
+    headerText: {
+        fontSize: 24,
+        fontWeight: '500',
+        color: '#000000',
+    },
+    content: {
         flex: 1,
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-    },
-    timeOption: {
-        paddingVertical: 6,
-        paddingHorizontal: 9,
-    },
-    timeOptionActive: {
-        borderWidth: 1,
-        borderColor: '#32768929',
-        backgroundColor: '#B3D8E22E',
-        borderRadius: 5,
-        padding: 6,
-    },
-    timeText: {
-        fontSize: 16,
-        color: '#000',
-    },
-    timeTextActive: {
-        color: '#327689',
-    },
-    customButton: {
-        backgroundColor: '#2C7A7B',
-        padding: 6,
-        borderRadius: 20,
-        marginLeft: 8,
-    },
-    customButtonText: {
-        color: '#fff',
-        fontSize: 16,
-    },
-    customRow: {
-        flexDirection: 'row',
         alignItems: 'center',
-    },
-    customInput: {
-        borderWidth: 1,
-        borderColor: '#327689',
-        borderRadius: 5,
-        padding: 8,
-        width: 80,
-        textAlign: 'center',
+        justifyContent: 'space-between',
+        paddingBottom: 100,
     },
     timerContainer: {
-        flex: 1,
-        justifyContent: 'center',
         alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: 80,
     },
-    timerText: {
-        position: 'absolute',
-        top: '45%',
-        fontSize: 36,
-        fontWeight: '500',
-        color: '#844016',
+    exerciseNameText: {
+        fontSize: 18,
+        color: '#555555',
+        marginTop: 20,
+        textAlign: 'center',
     },
-    buttonRow: {
+    buttonContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        width: '80%',
-        marginBottom: 40,
+        justifyContent: 'center',
+        width: '100%',
+        position: 'absolute',
+        bottom: 80,
+        gap: 10,
     },
     startButton: {
-        backgroundColor: '#327680',
-        padding: 14,
-        borderRadius: 12,
+        backgroundColor: '#337689',
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 8,
     },
-    stopButton: {
-        backgroundColor: '#CC4C4C',
-        padding: 14,
-        borderRadius: 12,
+    nextButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 8,
     },
     pauseButton: {
         backgroundColor: '#F0A500',
-        padding: 14,
-        borderRadius: 12,
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        marginRight: 10,
+    },
+    resetButton: {
+        backgroundColor: '#CC4C4C',
+        paddingVertical: 15,
+        paddingHorizontal: 30,
+        borderRadius: 8,
+        marginLeft: 10,
+    },
+    doneButton: {
+        backgroundColor: '#4CAF50',
+        paddingVertical: 15,
+        paddingHorizontal: 40,
+        borderRadius: 8,
+        position: 'absolute',
+        bottom: 30,
     },
     buttonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 18,
+        fontWeight: '500',
     },
-})
+});

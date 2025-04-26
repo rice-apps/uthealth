@@ -1,593 +1,517 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react';
 import {
-    View,
-    Text,
-    TouchableOpacity,
-    SafeAreaView,
-    Dimensions,
-    StyleSheet,
-    Animated,
-    Alert,
-    ScrollView
-} from 'react-native'
-import Icon from 'react-native-vector-icons/MaterialIcons'
-import { useRouter, useLocalSearchParams } from 'expo-router'
-import YoutubePlayer from 'react-native-youtube-iframe'
-import { LinearGradient } from 'expo-linear-gradient'
-import supabase from './utils/supabase'
-const { width, height } = Dimensions.get('window')
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  StatusBar,
+  Dimensions,
+  ScrollView,
+  ActivityIndicator
+} from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import YoutubePlayer from 'react-native-youtube-iframe';
+import supabase from './utils/supabase';
+const { width, height } = Dimensions.get('window');
 
-interface WorkoutRoundsProps {}
+const SPACING = 16;
 
-const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
-    const router = useRouter()
-    const params = useLocalSearchParams()
-    const playerRef = useRef(null)
-    const timerIntervalRef = useRef<NodeJS.Timeout | null>(null)
-    const exerciseType = (params.exerciseType as string) || 'resistance'
-    const exerciseSets = parseInt((params.exerciseSets as string) || '3', 10)
-    const exerciseReps = parseInt((params.exerciseReps as string) || '10', 10)
-    const exerciseTime = parseInt((params.exerciseTime as string) || '20', 10)
-    const exerciseName = (params.exerciseName as string) || 'Exercise'
-    const videoId = (params.videoId as string) || ''
-    const videoUrl = (params.videoUrl as string) || ''
-    const exerciseDate = (params.exerciseDate as string) || new Date().toISOString().split('T')[0]
-    const exerciseIdParam = (params.exerciseId as string) || ''
-    const exerciseId = exerciseIdParam ? parseInt(exerciseIdParam, 10) : null
-    const patientIdParam = (params.patientId as string) || '1'
-    const patientId = parseInt(patientIdParam, 10)
-    
-    const [playing, setPlaying] = useState(true)
-    const [completedSets, setCompletedSets] = useState<boolean[]>(Array(exerciseSets).fill(false))
-    const [currentSet, setCurrentSet] = useState(1)
-    const [shouldRestart, setShouldRestart] = useState(false)
-    const [timerActive, setTimerActive] = useState(exerciseType !== 'resistance')
-    const [timeRemaining, setTimeRemaining] = useState(exerciseTime * 60) // Convert to seconds
-    const [isLoggingProgress, setIsLoggingProgress] = useState(false)
-    const [borgScore, setBorgScore] = useState(5) // Default value
+const ExerciseScreen = () => {
+  const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  const exerciseId = parseInt(params.exerciseId, 10);
+  const exerciseName = params.exerciseName;
+  const exerciseDate = params.date || new Date().toISOString().split('T')[0];
+  
+  const [exercise, setExercise] = useState(null);
+  const [prescription, setPrescription] = useState({
+    sets: 3,
+    reps: 10,
+    time: 20
+  });
+  const [loading, setLoading] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [videoId, setVideoId] = useState('');
+  const [videoUrl, setVideoUrl] = useState('');
+  const [isCompleted, setIsCompleted] = useState(false);
+  const [patientId, setPatientId] = useState(1); // Default patient ID
 
-    const onStateChange = useCallback((state: string) => {
-        if (state === 'ended') {
-            setPlaying(false)
-        }
-    }, [])
-
-    const formatTime = (seconds: number) => {
-        const mins = Math.floor(seconds / 60)
-        const secs = seconds % 60
-        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  useEffect(() => {
+    if (!exerciseId) {
+      setLoading(false);
+      return;
     }
 
-    const restartVideo = useCallback(() => {
-        if (playerRef.current) {
-            try {
-                playerRef.current?.seekTo(0, true)
-            } catch (error) {
-                console.log('Error seeking video:', error)
-            }
-        }
-        setPlaying(true)
-    }, [playerRef])
-
-    const [progress] = useState(new Animated.Value(0))
-    
-    const startTimer = useCallback(() => {
-        if (timerIntervalRef.current) return
+    const fetchData = async () => {
+      try {
+        console.log(`Fetching data for exercise ID: ${exerciseId}`);
         
-        setTimerActive(true)
-        timerIntervalRef.current = setInterval(() => {
-            setTimeRemaining(prev => {
-                if (prev <= 1) {
-                    if (timerIntervalRef.current) {
-                        clearInterval(timerIntervalRef.current)
-                        timerIntervalRef.current = null
-                    }
-                    return 0
-                }
-                return prev - 1
-            })
-        }, 1000)
-    }, [])
+        // Fetch exercise data
+        const { data: exerciseData, error: exerciseError } = await supabase
+          .from('exercises')
+          .select('*')
+          .eq('exercise_id', exerciseId)
+          .single();
 
-    const pauseTimer = useCallback(() => {
-        if (timerIntervalRef.current) {
-            clearInterval(timerIntervalRef.current)
-            timerIntervalRef.current = null
+        if (exerciseError) {
+          console.error('Exercise fetch error:', exerciseError);
+          throw exerciseError;
         }
-        setTimerActive(false)
-    }, [])
-
-    const toggleTimer = useCallback(() => {
-        if (timerActive) {
-            pauseTimer()
+        
+        if (exerciseData) {
+          console.log('Exercise data found:', exerciseData);
+          setExercise(exerciseData);
+          
+          if (exerciseData.video_url) {
+            setVideoUrl(exerciseData.video_url);
+            
+            const id = extractYoutubeId(exerciseData.video_url);
+            if (id) setVideoId(id);
+          }
+        }
+        
+        // Get patient ID
+        const currentPatientId = await getPatientId();
+        setPatientId(currentPatientId);
+        
+        // Check if exercise is already completed for this date
+        const { data: progressData, error: progressError } = await supabase
+          .from('progress')
+          .select('*')
+          .eq('exercise_id', exerciseId)
+          .eq('date', exerciseDate)
+          .single();
+          
+        if (progressError && progressError.code !== 'PGRST116') {
+          console.error('Progress check error:', progressError);
+        } else if (progressData) {
+          console.log('Exercise already completed on this date:', progressData);
+          setIsCompleted(true);
+        }
+        
+        // Get the most recent prescription for this exercise
+        // First try to get a prescription specific to this date range and patient
+        const today = new Date(exerciseDate);
+        console.log(`Searching for prescription for date: ${exerciseDate}`);
+        
+        const { data: prescriptionData, error: prescriptionError } = await supabase
+          .from('prescription')
+          .select('*')
+          .eq('exercise_id', exerciseId)
+          .lte('start_date', exerciseDate)
+          .gte('end_date', exerciseDate)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        
+        if (prescriptionError) {
+          console.error('Prescription fetch error:', prescriptionError);
+        }
+        
+        if (prescriptionData && prescriptionData.length > 0) {
+          console.log('Found date-specific prescription:', prescriptionData[0]);
+          setPrescription({
+            sets: prescriptionData[0].sets || 3,
+            reps: prescriptionData[0].reps || 10,
+            time: prescriptionData[0].time || 20
+          });
         } else {
-            startTimer()
+          // If no date-specific prescription, get the most recent one
+          console.log('No date-specific prescription found, getting most recent');
+          const { data: latestPrescription, error: latestError } = await supabase
+            .from('prescription')
+            .select('*')
+            .eq('exercise_id', exerciseId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (!latestError && latestPrescription) {
+            console.log('Found latest prescription:', latestPrescription);
+            setPrescription({
+              sets: latestPrescription.sets || 3,
+              reps: latestPrescription.reps || 10,
+              time: latestPrescription.time || 20
+            });
+          } else {
+            console.log('Using default prescription values');
+          }
         }
-    }, [timerActive, pauseTimer, startTimer])
+      } catch (err) {
+        console.error('Error in data fetch:', err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const updateProgress = () => {
-        let progressValue
-        
-        if (exerciseType === 'resistance') {
-            const completedSetCount = completedSets.filter(set => set).length
-            progressValue = completedSetCount / exerciseSets
-        } else {
-            const totalTime = exerciseTime * 60
-            progressValue = 1 - (timeRemaining / totalTime)
-        }
-        
-        Animated.timing(progress, {
-            toValue: progressValue,
-            duration: 500,
-            useNativeDriver: false,
-        }).start()
+    fetchData();
+  }, [exerciseId, exerciseDate]);
+
+  const getPatientId = async () => {
+    try {
+      // In a real app, this would get the current patient ID from context or storage
+      return 1; // Default patient ID
+    } catch (error) {
+      console.error('Error getting patient ID:', error);
+      return 1; // Default fallback
     }
+  };
 
-    useEffect(() => {
-        if (exerciseType !== 'resistance') {
-            startTimer()
-        }
-        
-        return () => {
-            if (timerIntervalRef.current) {
-                clearInterval(timerIntervalRef.current)
-            }
-        }
-    }, [exerciseType, startTimer])
+  // Helpers
+  const extractYoutubeId = (url) => {
+    if (!url) return null;
+    const regex = /^.*(youtu\.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regex);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
-    useEffect(() => {
-        updateProgress()
-    }, [completedSets, timeRemaining])
-
-    useEffect(() => {
-        if (shouldRestart) {
-            restartVideo()
-            setShouldRestart(false)
-        }
-    }, [shouldRestart, restartVideo])
-
-    const togglePlayback = () => {
-        setPlaying(!playing)
-        if (exerciseType !== 'resistance') {
-            toggleTimer()
-        }
+  const formatTags = () => {
+    if (!exercise?.tags) return 'aerobic';
+    if (Array.isArray(exercise.tags)) {
+      return exercise.tags.join(', ').replace(/['"]/g, '');
     }
-
-    const toggleSetCompletion = (setIndex: number) => {
-        const newCompletedSets = [...completedSets]
-        newCompletedSets[setIndex] = !newCompletedSets[setIndex]
-        
-        // If marking as completed and it's not already completed
-        if (newCompletedSets[setIndex] && !completedSets[setIndex]) {
-            // Find the next incomplete set
-            const nextIncompleteIndex = newCompletedSets.findIndex(set => !set)
-            if (nextIncompleteIndex !== -1) {
-                setCurrentSet(nextIncompleteIndex + 1)
-            }
-            
-            setShouldRestart(true)
+    if (typeof exercise.tags === 'string') {
+      try {
+        const parsed = JSON.parse(exercise.tags);
+        if (Array.isArray(parsed)) {
+          return parsed.join(', ');
         }
-        
-        setCompletedSets(newCompletedSets)
+        return exercise.tags;
+      } catch (e) {
+        // If not a valid JSON, just return the string
+        return exercise.tags;
+      }
     }
+    return 'aerobic';
+  };
 
-    const logExerciseProgress = async () => {
-        if (!exerciseId) {
-            console.log('Cannot log progress: No exercise ID provided')
-            return false
-        }
+  const isResistanceExercise = () => !exercise || exercise?.type === 'resistance';
 
-        try {
-            setIsLoggingProgress(true)
-            
-            console.log(`Logging progress for exercise ${exerciseId} on ${exerciseDate}`)
-            
-            const { data: existingProgress, error: checkError } = await supabase
-                .from('progress')
-                .select('*')
-                .eq('exercise_id', exerciseId)
-                .eq('date', exerciseDate)
-                .single()
-                
-            if (checkError && checkError.code !== 'PGRST116') { 
-                console.error('Error checking existing progress:', checkError)
-                return false
-            }
-            
-            if (existingProgress) {
-                console.log('Exercise was already logged for this date:', existingProgress)
-                return true 
-            }
-            
-            const { data: patientExists, error: patientError } = await supabase
-                .from('patient')
-                .select('id')
-                .eq('id', patientId)
-                .single()
-            
-            if (patientError && patientError.code !== 'PGRST116') {
-                console.error('Error checking patient:', patientError)
-            }
-            
-            let validPatientId = patientId
-            if (!patientExists) {
-                console.log(`Patient with ID ${patientId} not found, using default`)
-                const { data: firstPatient } = await supabase
-                    .from('patient')
-                    .select('id')
-                    .limit(1)
-                    .single()
-                
-                if (firstPatient) {
-                    validPatientId = firstPatient.id
-                    console.log(`Using alternative patient ID: ${validPatientId}`)
-                } else {
-                    console.error('No patients found in database')
-                    return false
-                }
-            }
-            
-            const { data, error } = await supabase
-                .from('progress')
-                .insert([
-                    { 
-                        exercise_id: exerciseId,
-                        date: exerciseDate,
-                    }
-                ])
-                
-            if (error) {
-                console.error('Error logging progress:', error)
-                return false
-            }
-            
-            console.log('Progress logged successfully:', data)
-            return true
-            
-        } catch (error) {
-            console.error('Exception while logging progress:', error)
-            return false
-        } finally {
-            setIsLoggingProgress(false)
-        }
-    }
-
-    const checkWorkoutComplete = async () => {
-        const allCompleted = exerciseType === 'resistance' 
-            ? completedSets.every(set => set)
-            : timeRemaining === 0
-            
-        if (allCompleted && !isLoggingProgress) {
-            const logSuccess = await logExerciseProgress()
-            
-            Alert.alert(
-                "Workout Complete!",
-                logSuccess 
-                    ? "Great job! Your progress has been saved."
-                    : "Great job! You've completed the workout, but there was an issue saving your progress.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            if (exerciseDate) {
-                                router.replace({
-                                    pathname: '/',
-                                    params: { date: exerciseDate }
-                                })
-                            } else {
-                                router.replace('/')
-                            }
-                        }
-                    }
-                ]
-            )
-        }
-    }
+  const togglePlay = () => setPlaying(!playing);
+  const goBack = () => { setPlaying(false); router.back(); };
+  
+  const startWorkout = () => {
+    setPlaying(false);
     
-    useEffect(() => {
-        const isComplete = exerciseType === 'resistance' 
-            ? completedSets.every(set => set)
-            : timeRemaining === 0
-            
-        if (isComplete) {
-            checkWorkoutComplete()
-        }
-    }, [completedSets, timeRemaining])
+    const type = isResistanceExercise() ? 'resistance' : 'aerobic';
+    
+    const sets = prescription.sets || 3;
+    const reps = prescription.reps || 10;
+    const time = prescription.time || 20;
 
+    router.push({
+      pathname: './WorkoutRounds',
+      params: {
+        exerciseType: type,
+        exerciseSets: sets.toString(),
+        exerciseReps: reps.toString(),
+        exerciseTime: time.toString(),
+        exerciseName: exercise?.name || exerciseName,
+        videoId: videoId || '',
+        videoUrl: videoUrl || '',
+        exerciseDate: exerciseDate, 
+        exerciseId: exerciseId.toString(), 
+        patientId: patientId?.toString() || '1' 
+      }
+    });
+  };
+
+  if (loading) {
     return (
-        <LinearGradient
-            colors={['#337689', '#337689', '#ffffff']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 0, y: 0.6 }}
-            style={styles.container}
-        >
-            {/* Back Button */}
-            <TouchableOpacity
-                onPress={() => router.back()}
-                style={styles.backButton}
-            >
-                <Icon name="arrow-back" size={24} color="#FFFFFF" />
-            </TouchableOpacity>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.secondaryNav}>
+          <TouchableOpacity onPress={goBack}>
+            <Icon name="arrow-back" size={28} color="white" />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#327689" />
+          <Text style={styles.loadingText}>Loading exercise details...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
-            {/* Video Container */}
-            <View style={styles.videoContainer}>
-                {videoId ? (
-                    <YoutubePlayer
-                        ref={playerRef}
-                        height={height * 0.3}
-                        width={width}
-                        play={playing}
-                        videoId={videoId}
-                        onChangeState={onStateChange}
-                        forceAndroidAutoplay={true}
-                        initialPlayerParams={{
-                            controls: false,
-                            modestbranding: true,
-                            showClosedCaptions: false,
-                            rel: false,
-                        }}
-                    />
-                ) : (
-                    <View style={[styles.placeholderVideo, { height: height * 0.3 }]}>
-                        <Icon name="fitness-center" size={60} color="#337689" />
-                        <Text style={styles.placeholderText}>No video available</Text>
-                    </View>
-                )}
+  const displaySets = prescription.sets ?? 3;
+  const displayReps = prescription.reps ?? 10;
+  const displayTime = prescription.time ?? 20;
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
+      {/* Top Navigation Bar */}
+      <View style={styles.topNav}>
+        <TouchableOpacity onPress={goBack}>
+          <Text style={styles.navText}>index</Text>
+        </TouchableOpacity>
+        <View style={styles.navCenter} />
+        <View style={styles.navRight} />
+      </View>
+      
+      {/* Secondary Navigation Bar (blue header) */}
+      <View style={styles.secondaryNav}>
+        <TouchableOpacity onPress={goBack}>
+          <Icon name="arrow-back" size={28} color="white" />
+        </TouchableOpacity>
+        
+        {isCompleted && (
+          <View style={styles.completedBadge}>
+            <Icon name="check-circle" size={20} color="white" />
+            <Text style={styles.completedText}>Completed</Text>
+          </View>
+        )}
+      </View>
+      
+      <ScrollView 
+        style={styles.contentWrapper}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {/* Video Section */}
+        <View style={styles.videoContainer}>
+          {videoId ? (
+            <YoutubePlayer
+              height={height * 0.35}
+              width={width}
+              play={playing}
+              videoId={videoId}
+              onChangeState={state => state === 'ended' && setPlaying(false)}
+              forceAndroidAutoplay
+              initialPlayerParams={{ controls: false, modestbranding: true, showClosedCaptions: false, rel: false }}
+            />
+          ) : (
+            <View style={[styles.placeholderImage, { height: height * 0.35 }]}> 
+              <Icon name="fitness-center" size={60} color="#327689" />
+              <Text style={styles.placeholderText}>No video available</Text>
             </View>
+          )}
+        </View>
+        
+        {/* Information Section */}
+        <View style={styles.infoContainer}>
+          {/* Exercise Title */}
+          <Text style={styles.exerciseTitle}>{exercise?.name || exerciseName}</Text>
+          
+          {/* Date Range Info */}
+          {exercise && (
+            <View style={styles.dateRangeContainer}>
+              <Text style={styles.dateRangeText}>
+                Current prescription for: {new Date(exerciseDate).toLocaleDateString()}
+              </Text>
+            </View>
+          )}
+          
+          {/* Metadata (Sets, Reps, Type) */}
+          <View style={styles.metadataContainer}>
+            {isResistanceExercise() ? (
+              <>
+                <MetadataRow icon="fitness-center" text={`Sets: ${displaySets}`} />
+                <MetadataRow icon="repeat" text={`Reps: ${displayReps}`} />
+              </>
+            ) : (
+              <MetadataRow icon="schedule" text={`Duration: ${displayTime} mins`} />
+            )}
+            <MetadataRow icon="layers" text={`Type: ${formatTags()}`} />
+          </View>
+          
+          {/* Exercise description if available */}
+          {exercise?.description && (
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.descriptionTitle}>Description</Text>
+              <Text style={styles.descriptionText}>{exercise.description}</Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+      
+      {/* Start Workout Button */}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[
+            styles.startButton,
+            isCompleted && styles.startButtonDisabled
+          ]} 
+          onPress={startWorkout}
+          disabled={isCompleted}
+        >
+          <Text style={styles.startButtonText}>
+            {isCompleted ? 'Already Completed' : 'Start Workout'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
+  );
+};
 
-            {/* Content Container */}
-            <SafeAreaView style={styles.contentContainer}>
-                
-
-                {/* Progress Bar */}
-                <View style={styles.progressBarContainer}>
-                    <Animated.View
-                        style={[
-                            styles.progressBarFill,
-                            {
-                                width: progress.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: ['0%', '100%'],
-                                }),
-                            },
-                        ]}
-                    />
-                </View>
-
-                {/* Conditional Content: Sets for resistance / Timer for aerobic */}
-                {exerciseType === 'resistance' ? (
-                    <>
-                        {/* Set information for resistance exercises */}
-                        <ScrollView 
-                            style={styles.setsScrollContainer}
-                            showsVerticalScrollIndicator={false}
-                        >
-                            {Array.from({ length: exerciseSets }).map((_, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[
-                                        styles.setOptionButton,
-                                        completedSets[index] && styles.optionSelected,
-                                        currentSet - 1 === index && !completedSets[index] && styles.currentSetButton
-                                    ]}
-                                    onPress={() => toggleSetCompletion(index)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.optionText,
-                                            completedSets[index] && styles.optionTextSelected,
-                                        ]}
-                                    >
-                                        {`Set ${index + 1} - ${exerciseReps} reps`}
-                                    </Text>
-                                    <Icon
-                                        name={
-                                            completedSets[index]
-                                                ? 'check-circle'
-                                                : 'radio-button-unchecked'
-                                        }
-                                        size={24}
-                                        color={
-                                            completedSets[index]
-                                                ? '#ffffff'
-                                                : '#337689'
-                                        }
-                                    />
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </>
-                ) : (
-                    // Central Timer for aerobic exercises
-                    <View style={styles.centeredTimerContainer}>
-                        <View style={styles.timerCircle}>
-                            <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
-                            <Text style={styles.timerLabel}>remaining</Text>
-                        </View>
-                        
-                        <View style={styles.timeProgressInfo}>
-                            <Text style={styles.timeDescription}>
-                                {timeRemaining === 0 
-                                    ? 'Workout Complete!' 
-                                    : 'Keep Going!'}
-                            </Text>
-                        </View>
-                    </View>
-                )}
-
-                {/* Play/Pause Button */}
-                <View style={styles.bottomControls}>
-                    <TouchableOpacity
-                        onPress={togglePlayback}
-                        style={styles.pauseButton}
-                    >
-                        <Icon
-                            name={
-                                playing
-                                    ? 'pause-circle-filled'
-                                    : 'play-circle-filled'
-                            }
-                            size={50}
-                            color="#337689"
-                        />
-                    </TouchableOpacity>
-                </View>
-            </SafeAreaView>
-        </LinearGradient>
-    )
-}
+const MetadataRow = ({ icon, text }) => (
+  <View style={styles.metadataRow}>
+    <Icon name={icon} size={24} color="#327689" />
+    <Text style={styles.metadataText}>{text}</Text>
+  </View>
+);
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    videoContainer: {
-        position: 'absolute',
-        top: height * 0.08,
-        left: 0,
-        right: 0,
-        height: height * 0.3,
-        zIndex: 1,
-    },
-    placeholderVideo: {
-        width: '100%',
-        backgroundColor: '#d0d0d0',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    placeholderText: {
-        marginTop: 16,
-        fontSize: 16,
-        color: '#666',
-    },
-    exerciseInfoContainer: {
-        marginTop: 10,
-        marginBottom: 10,
-        alignItems: 'center',
-    },
-    exerciseName: {
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#333333',
-        marginBottom: 5,
-        textAlign: 'center',
-    },
-    setsScrollContainer: {
-        marginTop: 10,
-        maxHeight: height * 0.35,
-    },
-    centeredTimerContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 32,
-    },
-    timerCircle: {
-        width: 220,
-        height: 220,
-        borderRadius: 110,
-        backgroundColor: '#ffffff',
-        justifyContent: 'center',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-        elevation: 7,
-        borderWidth: 3,
-        borderColor: '#337689',
-    },
-    timeProgressInfo: {
-        marginTop: 24,
-        alignItems: 'center',
-    },
-    timeDescription: {
-        fontSize: 22,
-        color: '#333333',
-        fontWeight: '600',
-    },
-    timerLabel: {
-        fontSize: 18,
-        color: '#555555',
-        marginTop: 8,
-    },
-    timerText: {
-        fontSize: 48,
-        color: '#337689',
-        fontWeight: 'bold',
-    },
-    progressBarContainer: {
-        height: 6,
-        backgroundColor: '#e0e0e0',
-        marginTop: 20,
-        marginBottom: 12,
-        borderRadius: 3,
-        marginHorizontal: 5,
-    },
-    progressBarFill: {
-        height: '100%',
-        backgroundColor: '#337689',
-        borderRadius: 3,
-    },
-    contentContainer: {
-        flex: 1,
-        justifyContent: 'flex-start',
-        paddingHorizontal: 24,
-        paddingBottom: 32,
-        marginTop: height * 0.32,
-    },
-    backButton: {
-        padding: 16,
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        zIndex: 10,
-    },
-    setOptionButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        backgroundColor: '#ffffff',
-        paddingVertical: 18,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        marginBottom: 12,
-        borderWidth: 2,
-        borderColor: '#E5E5E5',
-        elevation: 3,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-    },
-    currentSetButton: {
-        borderColor: '#337689',
-        borderWidth: 3,
-    },
-    optionSelected: {
-        backgroundColor: '#337689',
-        borderColor: '#337689',
-    },
-    optionText: {
-        fontSize: 18,
-        color: '#337689',
-        fontWeight: '500',
-    },
-    optionTextSelected: {
-        color: '#ffffff',
-    },
-    bottomControls: {
-        position: 'absolute',
-        bottom: 90,
-        left: 0,
-        right: 0,
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    pauseButton: {
-        padding: 25,
-    },
-})
+  container: { 
+    flex: 1, 
+    backgroundColor: 'white' 
+  },
+  loadingContainer: { 
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center' 
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666'
+  },
+  topNav: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING,
+    paddingVertical: SPACING,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0'
+  },
+  navCenter: { flex: 1, alignItems: 'center' },
+  navText: { color: '#327689', fontSize: 16 },
+  navRight: { width: SPACING * 2 },
+  secondaryNav: { 
+    backgroundColor: '#327689', 
+    padding: SPACING,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between'
+  },
+  completedBadge: {
+    backgroundColor: '#22aa55',
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 12
+  },
+  completedText: {
+    color: 'white',
+    fontWeight: 'bold',
+    marginLeft: 5,
+    fontSize: 14
+  },
+  contentWrapper: { 
+    flex: 1, 
+    backgroundColor: '#f0f0f0',
+  },
+  scrollContent: {
+    paddingBottom: 100, 
+  },
+  videoContainer: { 
+    width: '100%', 
+    backgroundColor: '#000',
+    minHeight: 200
+  },
+  placeholderImage: {
+    width: '100%',
+    backgroundColor: '#d0d0d0',
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
+  placeholderText: { 
+    marginTop: SPACING, 
+    fontSize: 16, 
+    color: '#666' 
+  },
+  infoContainer: { 
+    backgroundColor: '#e6f3f5', 
+    padding: SPACING * 1.5,
+    paddingTop: SPACING * 2,
+    paddingBottom: SPACING * 3
+  },
+  exerciseTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#111',
+    marginBottom: SPACING,
+    lineHeight: 34
+  },
+  dateRangeContainer: {
+    marginBottom: SPACING,
+    paddingBottom: SPACING,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+  },
+  dateRangeText: {
+    fontSize: 16,
+    color: '#555',
+    fontStyle: 'italic'
+  },
+  metadataContainer: { 
+    marginBottom: SPACING * 2
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING,
+    paddingVertical: SPACING * 0.5,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingLeft: 5
+  },
+  metadataText: { 
+    fontSize: 18, 
+    color: '#333', 
+    marginLeft: SPACING,
+    fontWeight: '500'
+  },
+  descriptionContainer: {
+    marginTop: SPACING,
+  },
+  descriptionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: SPACING / 2
+  },
+  descriptionText: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#444'
+  },
+  buttonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: SPACING,
+    paddingVertical: SPACING,
+    backgroundColor: 'rgba(230, 243, 245, 0.95)',
+    borderTopWidth: 1,
+    borderTopColor: '#d0d0d0',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4
+  },
+  startButton: {
+    backgroundColor: '#327689',
+    borderRadius: SPACING * 2,
+    padding: SPACING,
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  startButtonDisabled: {
+    backgroundColor: '#888888'
+  },
+  startButtonText: { 
+    color: 'white', 
+    fontSize: 18, 
+    fontWeight: 'bold' 
+  },
+});
 
-export default WorkoutRounds
+export default ExerciseScreen;
