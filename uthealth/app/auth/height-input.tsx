@@ -67,8 +67,7 @@ export default function HeightScreen() {
             })
             .eq('patientID', user.patientID)
             .single()
-        console.log(user.dob)
-        console.log(error)
+
         if (error) {
             throw error
         }

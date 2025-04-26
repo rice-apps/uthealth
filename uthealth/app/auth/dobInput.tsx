@@ -18,28 +18,32 @@ const DobInput = () => {
     const { user } = useContext(OnboardingContext) as OnboardingContextType
     const router = useRouter()
 
-    const dayData: PickerItem[] = [...Array(32).keys()].map((index) => {
-        return {
-            label: index.toString(),
-            value: index,
-        }
-    })
+    const dayData: PickerItem[] = [...Array(32).keys()]
+        .filter((day: number) => day != 0)
+        .map((index) => {
+            return {
+                label: index.toString(),
+                value: index,
+            }
+        })
 
-    const monthData: PickerItem[] = [...Array(13).keys()].map((index) => {
-        return {
-            label: index.toString(),
-            value: index,
-        }
-    })
+    const monthData: PickerItem[] = [...Array(13).keys()]
+        .filter((day: number) => day != 0)
+        .map((index) => {
+            return {
+                label: index.toString(),
+                value: index,
+            }
+        })
     const currentYear = new Date().getFullYear()
-    const yearData: PickerItem[] = [
-        ...Array(currentYear - 1900 + 1).keys(),
-    ].map((index) => {
-        return {
-            label: (currentYear - index).toString(),
-            value: currentYear - index,
-        }
-    })
+    const yearData: PickerItem[] = [...Array(currentYear - 1900 + 1).keys()]
+        .filter((day: number) => day != 0)
+        .map((index) => {
+            return {
+                label: (currentYear - index).toString(),
+                value: currentYear - index,
+            }
+        })
 
     dayData.unshift({ label: 'Day', value: -1 })
     monthData.unshift({ label: 'Month', value: -1 })
