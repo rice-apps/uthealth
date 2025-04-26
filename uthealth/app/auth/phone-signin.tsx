@@ -83,11 +83,13 @@ const EmailSignIn: React.FC = () => {
 
             const { data: userData, error: userError } = await supabase
                 .from('users')
-                .select('patientID, clinicianID, onboarded')
+                .select(
+                    'patientID, clinicianID, weight, dob, height, gender, onboarded'
+                )
                 .eq('user_uuid', data.user.id)
                 .maybeSingle()
 
-            if (userError) {
+            if (userError || !userData) {
                 throw userError
             }
 
@@ -98,13 +100,22 @@ const EmailSignIn: React.FC = () => {
                 return
             }
 
+            console.log(userData)
+
+            user.patientID = userData.patientID
+            user.clinicianID = userData.clinicianID
+            user.weight = userData.weight
+            user.dob = new Date(userData.dob)
+            user.height = user.height
+            user.gender = user.gender
+
             Alert.alert(
                 'Signed in successfully!',
                 'You have successfully signed in',
                 [
                     {
                         text: 'OK',
-                        onPress: () => router.replace('/landing-page'),
+                        onPress: () => router.push('../landing-page'),
                     },
                 ]
             )
