@@ -1,16 +1,9 @@
-import { UserProvider } from '@/user/UserContext'
 import 'react-native-gesture-handler'
-import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import '../global.css'
 import { StyleSheet } from 'react-native'
-import { Slot, Redirect } from 'expo-router'
-import LandingPage from './landing-page'
-import ExerciseList from './exercises_list'
-import AccountCreation from './auth/account-creation'
-import SignIn from './auth/phone-signin'
-import WorkoutRounds from './WorkoutRounds'
+import { Redirect } from 'expo-router'
 export default function Index() {
-    return <Redirect href="/satisfaction-page" />
+    return <Redirect href="./timer" />
 }
 
 const styles = StyleSheet.create({
