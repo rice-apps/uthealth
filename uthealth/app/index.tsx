@@ -2,8 +2,9 @@ import 'react-native-gesture-handler'
 import '../global.css'
 import { StyleSheet } from 'react-native'
 import { Redirect } from 'expo-router'
+
 export default function Index() {
-    return <Redirect href="./timer" />
+    return <Redirect href="/auth/phone-signin" />
 }
 
 const styles = StyleSheet.create({

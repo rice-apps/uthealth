@@ -1,4 +1,10 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react'
+import React, {
+    useState,
+    useCallback,
+    useEffect,
+    useRef,
+    useContext,
+} from 'react'
 import {
     View,
     Text,
@@ -8,13 +14,17 @@ import {
     StyleSheet,
     Animated,
     Alert,
-    ScrollView
+    ScrollView,
 } from 'react-native'
 import Icon from 'react-native-vector-icons/MaterialIcons'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import YoutubePlayer from 'react-native-youtube-iframe'
 import { LinearGradient } from 'expo-linear-gradient'
 import supabase from './utils/supabase'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
 const { width, height } = Dimensions.get('window')
 
 interface WorkoutRoundsProps {}
@@ -31,17 +41,23 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
     const exerciseName = (params.exerciseName as string) || 'Exercise'
     const videoId = (params.videoId as string) || ''
     const videoUrl = (params.videoUrl as string) || ''
-    const exerciseDate = (params.exerciseDate as string) || new Date().toISOString().split('T')[0]
+    const exerciseDate =
+        (params.exerciseDate as string) ||
+        new Date().toISOString().split('T')[0]
     const exerciseIdParam = (params.exerciseId as string) || ''
     const exerciseId = exerciseIdParam ? parseInt(exerciseIdParam, 10) : null
-    const patientIdParam = (params.patientId as string) || '1'
-    const patientId = parseInt(patientIdParam, 10)
-    
+
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
+
     const [playing, setPlaying] = useState(true)
-    const [completedSets, setCompletedSets] = useState<boolean[]>(Array(exerciseSets).fill(false))
+    const [completedSets, setCompletedSets] = useState<boolean[]>(
+        Array(exerciseSets).fill(false)
+    )
     const [currentSet, setCurrentSet] = useState(1)
     const [shouldRestart, setShouldRestart] = useState(false)
-    const [timerActive, setTimerActive] = useState(exerciseType !== 'resistance')
+    const [timerActive, setTimerActive] = useState(
+        exerciseType !== 'resistance'
+    )
     const [timeRemaining, setTimeRemaining] = useState(exerciseTime * 60) // Convert to seconds
     const [isLoggingProgress, setIsLoggingProgress] = useState(false)
     const [borgScore, setBorgScore] = useState(5) // Default value
@@ -70,13 +86,13 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
     }, [playerRef])
 
     const [progress] = useState(new Animated.Value(0))
-    
+
     const startTimer = useCallback(() => {
         if (timerIntervalRef.current) return
-        
+
         setTimerActive(true)
         timerIntervalRef.current = setInterval(() => {
-            setTimeRemaining(prev => {
+            setTimeRemaining((prev) => {
                 if (prev <= 1) {
                     if (timerIntervalRef.current) {
                         clearInterval(timerIntervalRef.current)
@@ -107,15 +123,15 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
 
     const updateProgress = () => {
         let progressValue
-        
+
         if (exerciseType === 'resistance') {
-            const completedSetCount = completedSets.filter(set => set).length
+            const completedSetCount = completedSets.filter((set) => set).length
             progressValue = completedSetCount / exerciseSets
         } else {
             const totalTime = exerciseTime * 60
-            progressValue = 1 - (timeRemaining / totalTime)
+            progressValue = 1 - timeRemaining / totalTime
         }
-        
+
         Animated.timing(progress, {
             toValue: progressValue,
             duration: 500,
@@ -127,7 +143,7 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
         if (exerciseType !== 'resistance') {
             startTimer()
         }
-        
+
         return () => {
             if (timerIntervalRef.current) {
                 clearInterval(timerIntervalRef.current)
@@ -156,143 +172,153 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
     const toggleSetCompletion = (setIndex: number) => {
         const newCompletedSets = [...completedSets]
         newCompletedSets[setIndex] = !newCompletedSets[setIndex]
-        
+
         // If marking as completed and it's not already completed
         if (newCompletedSets[setIndex] && !completedSets[setIndex]) {
             // Find the next incomplete set
-            const nextIncompleteIndex = newCompletedSets.findIndex(set => !set)
+            const nextIncompleteIndex = newCompletedSets.findIndex(
+                (set) => !set
+            )
             if (nextIncompleteIndex !== -1) {
                 setCurrentSet(nextIncompleteIndex + 1)
             }
-            
+
             setShouldRestart(true)
         }
-        
+
         setCompletedSets(newCompletedSets)
     }
 
-    const logExerciseProgress = async () => {
-        if (!exerciseId) {
-            console.log('Cannot log progress: No exercise ID provided')
-            return false
-        }
-
-        try {
-            setIsLoggingProgress(true)
-            
-            console.log(`Logging progress for exercise ${exerciseId} on ${exerciseDate}`)
-            
-            const { data: existingProgress, error: checkError } = await supabase
-                .from('progress')
-                .select('*')
-                .eq('exercise_id', exerciseId)
-                .eq('date', exerciseDate)
-                .single()
-                
-            if (checkError && checkError.code !== 'PGRST116') { 
-                console.error('Error checking existing progress:', checkError)
-                return false
-            }
-            
-            if (existingProgress) {
-                console.log('Exercise was already logged for this date:', existingProgress)
-                return true 
-            }
-            
-            const { data: patientExists, error: patientError } = await supabase
-                .from('patient')
-                .select('id')
-                .eq('id', patientId)
-                .single()
-            
-            if (patientError && patientError.code !== 'PGRST116') {
-                console.error('Error checking patient:', patientError)
-            }
-            
-            let validPatientId = patientId
-            if (!patientExists) {
-                console.log(`Patient with ID ${patientId} not found, using default`)
-                const { data: firstPatient } = await supabase
-                    .from('patient')
-                    .select('id')
-                    .limit(1)
-                    .single()
-                
-                if (firstPatient) {
-                    validPatientId = firstPatient.id
-                    console.log(`Using alternative patient ID: ${validPatientId}`)
-                } else {
-                    console.error('No patients found in database')
-                    return false
-                }
-            }
-            
-            const { data, error } = await supabase
-                .from('progress')
-                .insert([
-                    { 
-                        exercise_id: exerciseId,
-                        date: exerciseDate,
-                    }
-                ])
-                
-            if (error) {
-                console.error('Error logging progress:', error)
-                return false
-            }
-            
-            console.log('Progress logged successfully:', data)
-            return true
-            
-        } catch (error) {
-            console.error('Exception while logging progress:', error)
-            return false
-        } finally {
-            setIsLoggingProgress(false)
-        }
-    }
-
     const checkWorkoutComplete = async () => {
-        const allCompleted = exerciseType === 'resistance' 
-            ? completedSets.every(set => set)
-            : timeRemaining === 0
-            
-        if (allCompleted && !isLoggingProgress) {
-            const logSuccess = await logExerciseProgress()
-            
-            Alert.alert(
-                "Workout Complete!",
-                logSuccess 
-                    ? "Great job! Your progress has been saved."
-                    : "Great job! You've completed the workout, but there was an issue saving your progress.",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => {
-                            if (exerciseDate) {
-                                router.replace({
-                                    pathname: '/',
-                                    params: { date: exerciseDate }
-                                })
-                            } else {
-                                router.replace('/')
-                            }
-                        }
-                    }
-                ]
-            )
+        const allCompleted =
+            exerciseType === 'resistance'
+                ? completedSets.every((set) => set)
+                : timeRemaining === 0
+
+        if (allCompleted) {
+            console.log({
+                pathname: './satisfaction-page',
+                params: {
+                    exerciseData: JSON.stringify({
+                        exerciseId: exerciseId,
+                        date: exerciseDate,
+                    }),
+                },
+            })
+            router.push({
+                pathname: './satisfaction-page',
+                params: {
+                    exerciseData: JSON.stringify({
+                        exerciseId: exerciseId,
+                        date: exerciseDate,
+                    }),
+                },
+            })
         }
     }
-    
-    useEffect(() => {
-        const isComplete = exerciseType === 'resistance' 
-            ? completedSets.every(set => set)
-            : timeRemaining === 0
-            
-        if (isComplete) {
-            checkWorkoutComplete()
-        }
-    }, [completedSets, timeRemaining])
+
+    // const logExerciseProgress = async () => {
+    //     if (!exerciseId) {
+    //         console.log('Cannot log progress: No exercise ID provided')
+    //         return false
+    //     }
+
+    //     try {
+    //         setIsLoggingProgress(true)
+
+    //         console.log(
+    //             `Logging progress for exercise ${exerciseId} on ${exerciseDate}`
+    //         )
+
+    //         const { data: existingProgress, error: checkError } = await supabase
+    //             .from('progress')
+    //             .select('*')
+    //             .eq('exercise_id', exerciseId)
+    //             .eq('date', exerciseDate)
+    //             .single()
+
+    //         if (checkError && checkError.code !== 'PGRST116') {
+    //             console.error('Error checking existing progress:', checkError)
+    //             return false
+    //         }
+
+    //         if (existingProgress) {
+    //             console.log(
+    //                 'Exercise was already logged for this date:',
+    //                 existingProgress
+    //             )
+    //             return true
+    //         }
+    //         console.log(user)
+    //         const { data: patientExists, error: patientError } = await supabase
+    //             .from('users')
+    //             .select('patientID')
+    //             .eq('patientID', user.patientID)
+    //             .single()
+
+    //         if (patientError && patientError.code !== 'PGRST116') {
+    //             console.error('Error checking patient:', patientError)
+    //         }
+
+    //         if (!patientExists) {
+    //             console.error('No patients found in database')
+    //             return false
+    //         }
+
+    //         const { data, error } = await supabase.from('progress').insert([
+    //             {
+    //                 exercise_id: exerciseId,
+    //                 date: exerciseDate,
+    //             },
+    //         ])
+
+    //         if (error) {
+    //             console.error('Error logging progress:', error)
+    //             return false
+    //         }
+
+    //         console.log('Progress logged successfully:', data)
+    //         return true
+    //     } catch (error) {
+    //         console.error('Exception while logging progress:', error)
+    //         return false
+    //     } finally {
+    //         setIsLoggingProgress(false)
+    //     }
+    // }
+
+    // const checkWorkoutComplete = async () => {
+    //     const allCompleted =
+    //         exerciseType === 'resistance'
+    //             ? completedSets.every((set) => set)
+    //             : timeRemaining === 0
+
+    //     if (allCompleted && !isLoggingProgress) {
+    //         const logSuccess = await logExerciseProgress()
+
+    //         Alert.alert(
+    //             'Workout Complete!',
+    //             logSuccess
+    //                 ? 'Great job! Your progress has been saved.'
+    //                 : "Great job! You've completed the workout, but there was an issue saving your progress.",
+    //             [
+    //                 {
+    //                     text: 'OK',
+    //                     onPress: () => {
+    //                         if (exerciseDate) {
+    //                             router.replace({
+    //                                 pathname: '/',
+    //                                 params: { date: exerciseDate },
+    //                             })
+    //                         } else {
+    //                             router.replace('/')
+    //                         }
+    //                     },
+    //                 },
+    //             ]
+    //         )
+    //     }
+    // }
 
     return (
         <LinearGradient
@@ -328,17 +354,22 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                         }}
                     />
                 ) : (
-                    <View style={[styles.placeholderVideo, { height: height * 0.3 }]}>
+                    <View
+                        style={[
+                            styles.placeholderVideo,
+                            { height: height * 0.3 },
+                        ]}
+                    >
                         <Icon name="fitness-center" size={60} color="#337689" />
-                        <Text style={styles.placeholderText}>No video available</Text>
+                        <Text style={styles.placeholderText}>
+                            No video available
+                        </Text>
                     </View>
                 )}
             </View>
 
             {/* Content Container */}
             <SafeAreaView style={styles.contentContainer}>
-                
-
                 {/* Progress Bar */}
                 <View style={styles.progressBarContainer}>
                     <Animated.View
@@ -358,57 +389,67 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                 {exerciseType === 'resistance' ? (
                     <>
                         {/* Set information for resistance exercises */}
-                        <ScrollView 
+                        <ScrollView
                             style={styles.setsScrollContainer}
                             showsVerticalScrollIndicator={false}
                         >
-                            {Array.from({ length: exerciseSets }).map((_, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={[
-                                        styles.setOptionButton,
-                                        completedSets[index] && styles.optionSelected,
-                                        currentSet - 1 === index && !completedSets[index] && styles.currentSetButton
-                                    ]}
-                                    onPress={() => toggleSetCompletion(index)}
-                                >
-                                    <Text
+                            {Array.from({ length: exerciseSets }).map(
+                                (_, index) => (
+                                    <TouchableOpacity
+                                        key={index}
                                         style={[
-                                            styles.optionText,
-                                            completedSets[index] && styles.optionTextSelected,
+                                            styles.setOptionButton,
+                                            completedSets[index] &&
+                                                styles.optionSelected,
+                                            currentSet - 1 === index &&
+                                                !completedSets[index] &&
+                                                styles.currentSetButton,
                                         ]}
+                                        onPress={() =>
+                                            toggleSetCompletion(index)
+                                        }
                                     >
-                                        {`Set ${index + 1} - ${exerciseReps} reps`}
-                                    </Text>
-                                    <Icon
-                                        name={
-                                            completedSets[index]
-                                                ? 'check-circle'
-                                                : 'radio-button-unchecked'
-                                        }
-                                        size={24}
-                                        color={
-                                            completedSets[index]
-                                                ? '#ffffff'
-                                                : '#337689'
-                                        }
-                                    />
-                                </TouchableOpacity>
-                            ))}
+                                        <Text
+                                            style={[
+                                                styles.optionText,
+                                                completedSets[index] &&
+                                                    styles.optionTextSelected,
+                                            ]}
+                                        >
+                                            {`Set ${index + 1} - ${exerciseReps} reps`}
+                                        </Text>
+                                        <Icon
+                                            name={
+                                                completedSets[index]
+                                                    ? 'check-circle'
+                                                    : 'radio-button-unchecked'
+                                            }
+                                            size={24}
+                                            color={
+                                                completedSets[index]
+                                                    ? '#ffffff'
+                                                    : '#337689'
+                                            }
+                                        />
+                                    </TouchableOpacity>
+                                )
+                            )}
                         </ScrollView>
                     </>
                 ) : (
                     // Central Timer for aerobic exercises
                     <View style={styles.centeredTimerContainer}>
                         <View style={styles.timerCircle}>
-                            <Text style={styles.timerText}>{formatTime(timeRemaining)}</Text>
+                            <Text style={styles.timerText}>
+                                {formatTime(timeRemaining)}
+                            </Text>
                             <Text style={styles.timerLabel}>remaining</Text>
                         </View>
-                        
+
                         <View style={styles.timeProgressInfo}>
                             <Text style={styles.timeDescription}>
-                                {timeRemaining === 0 
-                                    ? 'Workout Complete!' 
+                                {timeRemaining === 0
+                                    ? 'Workout Complete!'
                                     : 'Keep Going!'}
                             </Text>
                         </View>
@@ -430,6 +471,20 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                             size={50}
                             color="#337689"
                         />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        onPress={checkWorkoutComplete}
+                        style={
+                            (
+                                exerciseType === 'resistance'
+                                    ? completedSets.every((set) => set)
+                                    : timeRemaining === 0
+                            )
+                                ? styles.nextButtonActive
+                                : styles.nextButton
+                        }
+                    >
+                        <Icon name={'east'} size={30} color="white" />
                     </TouchableOpacity>
                 </View>
             </SafeAreaView>
@@ -578,8 +633,8 @@ const styles = StyleSheet.create({
     },
     bottomControls: {
         position: 'absolute',
-        bottom: 90,
-        left: 0,
+        bottom: 30,
+        left: 180,
         right: 0,
         flexDirection: 'row',
         justifyContent: 'center',
@@ -587,6 +642,26 @@ const styles = StyleSheet.create({
     },
     pauseButton: {
         padding: 25,
+    },
+    nextButton: {
+        width: 42,
+        height: 42,
+        borderRadius: 24, // half of width/height → perfect circle
+        borderWidth: 2, // thickness of the outline
+        borderColor: '#2C7A7B', // match your theme color
+        alignItems: 'center', // center any icon/text horizontally
+        justifyContent: 'center', // center vertically
+        backgroundColor: 'transparent', // or whatever fill you like
+    },
+    nextButtonActive: {
+        width: 42,
+        height: 42,
+        borderRadius: 24, // half of width/height → perfect circle
+        borderWidth: 2, // thickness of the outline
+        borderColor: '#2C7A7B', // match your theme color
+        alignItems: 'center', // center any icon/text horizontally
+        justifyContent: 'center', // center vertically
+        backgroundColor: '#2C7A7B', // or whatever fill you like
     },
 })
 

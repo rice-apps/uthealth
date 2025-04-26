@@ -1,9 +1,19 @@
 import { UserProvider } from '@/user/UserContext'
 import 'react-native-gesture-handler'
 import '../global.css'
-import React, { useState } from 'react'
+import React, { useContext, useState } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { useFonts } from 'expo-font'
+import {
+    useLocalSearchParams,
+    useRouter,
+    useSearchParams,
+} from 'expo-router/build/hooks'
+import {
+    OnboardingContext,
+    OnboardingContextType,
+} from './onboarding/OnboardingContext'
+import supabase from './utils/supabase'
 
 const rpeLevels = [
     { label: 'Very Very Hard', value: 10, icon: '🥵', color: '#00000' },
@@ -15,8 +25,17 @@ const rpeLevels = [
     { label: 'Very Very Light', value: 1, icon: '😁', color: '#66BB6A' },
 ]
 
+type Params = { exerciseData?: string }
+
 export default function RPEList() {
+    const params = useLocalSearchParams()
+    const { exerciseData } = params as Params
     const [selected, setSelected] = useState<number | null>(null)
+    console.log(params)
+    console.log(exerciseData)
+    const exerciseJSON = JSON.parse(exerciseData ? exerciseData : '')
+    const { user } = useContext(OnboardingContext) as OnboardingContextType
+    const router = useRouter()
 
     const handleSelect = (value: number) => {
         setSelected(value)
@@ -90,6 +109,29 @@ export default function RPEList() {
                         ? styles.nextButtonAvailable
                         : styles.nextButtonUnavailable
                 }
+                onPress={async () => {
+                    const exercise_id = exerciseJSON.exerciseId
+                    const date = exerciseJSON.date
+                    const patient_id = user.patientID
+
+                    const { data, error } = await supabase
+                        .from('progress')
+                        .insert([
+                            {
+                                patientID: patient_id,
+                                exercise_id: exercise_id,
+                                date: date,
+                                borgScale: selected,
+                            },
+                        ])
+                    if (error) {
+                        console.error('Insert failed:', error)
+                        return
+                    }
+                    console.log('Inserted row:', data)
+                    console.log('inserted!')
+                    router.push('./landing_page')
+                }}
             >
                 <Text style={styles.nextButtonText}>Continue</Text>
             </TouchableOpacity>
