@@ -9,6 +9,7 @@ import ExerciseList from './exercises_list'
 import AccountCreation from './auth/account-creation'
 import SignIn from './auth/phone-signin'
 import WorkoutRounds from './WorkoutRounds'
+import HeightScreen from './auth/height-input'
 export default function Index() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

@@ -264,7 +264,7 @@ const WorkoutRounds: React.FC<WorkoutRoundsProps> = () => {
                 "Workout Complete!",
                 logSuccess 
                     ? "Great job! Your progress has been saved."
-                    : "Great job! You've completed the workout, but there was an issue saving your progress.",
+                    : "Great job! You've completed the workout",
                 [
                     {
                         text: "OK",
