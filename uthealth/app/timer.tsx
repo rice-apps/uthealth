@@ -1,354 +1,257 @@
-import React, { useState, useEffect } from 'react';
-import Svg, { Circle, Path } from 'react-native-svg';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import React, { FC, useState, useEffect } from 'react'
+import Svg, { Circle, Text as SvgText } from 'react-native-svg'
+import {
+    View,
+    Text,
+    TouchableOpacity,
+    StyleSheet,
+    TextInput,
+    TouchableWithoutFeedback,
+    Keyboard,
+} from 'react-native'
 
-const durations = [5, 15, 30, 45, 60];
+/** TopBar props */
+interface TopBarProps {
+    onSetTime: (minutes: number) => void
+}
 
-const TopBar = ({ onSetTime }) => {
-   const [selectedTime, setSelectedTime] = useState(0);
-   const [showingCustom, setShowingCustom] = useState(true);
-   const [customTime, setCustomTime] = useState('');
+/** Constants */
+const PRESET_MINUTES = [5, 15, 30, 45, 60]
+const MS_PER_MINUTE = 60 * 1000
+const TICK_MS = 10 // 1 centisecond
 
-   const handleCustomPress = () => {
-       setShowingCustom(false);
-   };
+/** Main TimerScreen */
+const TimerScreen: FC = () => {
+    // durations in ms
+    const [durationMs, setDurationMs] = useState<number>(
+        PRESET_MINUTES[0] * MS_PER_MINUTE
+    )
+    const [timeLeft, setTimeLeft] = useState<number>(durationMs)
+    const [running, setRunning] = useState<boolean>(false)
 
-   const handleSetCustomTime = () => {
-       let time = parseInt(customTime, 10);
-       if (!isNaN(time) && time > 0) {
-           onSetTime(time);
-           setCustomTime('');
-           setShowingCustom(true);
-       }
-   };
+    // tick effect
+    useEffect(() => {
+        let id: any
+        if (running && timeLeft > 0) {
+            id = setInterval(() => {
+                setTimeLeft((prev) => {
+                    const next = Math.max(prev - TICK_MS, 0)
+                    if (next === 0) setRunning(false)
+                    return next
+                })
+            }, TICK_MS)
+        }
+        return () => clearInterval(id)
+    }, [running])
 
-   return (
-       <View style={styles.topBar}>
-           {showingCustom && (
-               <View style={{ flex: 1, flexDirection: 'row', justifyContent: 'space-between' }}>
-               {durations.map((time, index) => (
-                   <TouchableOpacity
-                       key={time}
-                       style={[
-                           styles.timeOption,
-                           selectedTime === time && styles.selectedTime,
-                           index === durations.length - 1 ? { marginRight: 15 } : {}, // Add margin to the last button
-                       ]}
-                       onPress={() => {
-                           setSelectedTime(time);
-                           onSetTime(time);
-                       }}
-                   >
-                       <Text style={[styles.timeText, selectedTime === time && styles.selectedText]}>
-                           {time}
-                       </Text>
-                   </TouchableOpacity>
-               ))}
-           </View>
-           
-           )}
-           {!showingCustom ? (
-    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-        <TextInput
-            placeholder="Enter custom time"
-            keyboardType="numeric"
-            style={styles.input}
-            value={customTime}
-            onChangeText={setCustomTime}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={handleSetCustomTime}>
-            <Text style={styles.addButtonText}>Set</Text>
-        </TouchableOpacity>
-    </View>
-) : (
-    <TouchableOpacity style={styles.addButton} onPress={handleCustomPress}>
-        <Text style={styles.addButtonText}>+ Custom</Text>
-    </TouchableOpacity>
-)}
-       </View>
-   );
-};
+    // derive display
+    const mins = Math.floor(timeLeft / MS_PER_MINUTE)
+    const secs = Math.floor((timeLeft % MS_PER_MINUTE) / 1000)
+    const centis = Math.floor((timeLeft % 1000) / 10)
+    const formatTime = (m: number, s: number, c: number) =>
+        `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}:${c
+            .toString()
+            .padStart(2, '0')}`
 
-const TimerScreen = () => {
-   const [timerDuration, setTimerDuration] = useState(30000);
-   const [timeLeft, setTimeLeft] = useState(timerDuration);
-   const [isRunning, setIsRunning] = useState(false);
-   const [isCompleted, setIsCompleted] = useState(false);
+    const progress = timeLeft / durationMs
 
-   useEffect(() => {
-       let timer;
-       let startTime = Date.now();
-       if (isRunning && timeLeft > 0) {
-           timer = setInterval(() => {
-               const elapsedTime = Date.now() - startTime;
-               const newTimeLeft = Math.max(timerDuration - elapsedTime, 0);
-               setTimeLeft(newTimeLeft);
-               
-               // Check if timer has reached zero
-               if (newTimeLeft === 0) {
-                   setIsRunning(false);
-                   setIsCompleted(true);
-               }
-           }, 10); // Update every 10ms
-       } else if (timeLeft === 0) {
-           setIsRunning(false);
-           setIsCompleted(true);
-       }
+    // circle math
+    const R = 45
+    const C = 2 * Math.PI * R
+    const angle = 2 * Math.PI * progress
+    const markerX = 50 + R * Math.cos(angle)
+    const markerY = 50 + R * Math.sin(angle)
 
-       return () => clearInterval(timer);
-   }, [isRunning, timerDuration]);
+    const handleSetTime = (minutes: number) => {
+        const ms = minutes * MS_PER_MINUTE
+        setDurationMs(ms)
+        setTimeLeft(ms)
+        setRunning(false)
+    }
 
-   const formatTime = (time) => {
-       const minutes = Math.floor(time / 60000);
-       const seconds = Math.floor((time % 60000) / 1000);
-       const centiseconds = Math.floor((time % 1000) / 10);
-       return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}:${String(centiseconds).padStart(2, '0')}`;
-   };
+    return (
+        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+            <View style={styles.container}>
+                <View style={styles.timerContainer}>
+                    <Svg width={300} height={300} viewBox="0 0 100 100">
+                        <Circle
+                            cx="50"
+                            cy="50"
+                            r={R}
+                            stroke="#E0E0E0"
+                            strokeWidth="6"
+                            fill="none"
+                        />
+                        <Circle
+                            cx="50"
+                            cy="50"
+                            r={R}
+                            stroke="#2C7A7B"
+                            strokeWidth="6"
+                            fill="none"
+                            strokeDasharray={C}
+                            strokeDashoffset={C - C * progress}
+                            strokeLinecap="butt"
+                        />
+                        <Circle
+                            cx={markerX}
+                            cy={markerY}
+                            r={3}
+                            fill="#FFFFFF"
+                            stroke="gray"
+                        />
+                        <SvgText
+                            x="50"
+                            y="50"
+                            textAnchor="middle"
+                            alignmentBaseline="middle"
+                            fontSize="10" // ~36px in a 100x100 viewBox
+                            fill="#844016"
+                            fontWeight="500"
+                        >
+                            {formatTime(mins, secs, centis)}
+                        </SvgText>
+                    </Svg>
+                </View>
 
-   const progress = timeLeft / timerDuration;
-   const elapsedProgress = 1 - progress;
-
-   // Calculate the arc path for the elapsed (gray) portion
-   const calculateArc = (progress) => {
-       const radius = 45;
-       const cx = 50;
-       const cy = 50;
-       
-       // Calculate the angle in radians
-       const angle = 2 * Math.PI * progress;
-       
-       // Calculate the end point
-       const endX = cx + radius * Math.cos(2 * Math.PI - angle);
-       const endY = cy + radius * Math.sin(2 * Math.PI - angle);
-       
-       // Determine if we need to use the large arc flag
-       const largeArcFlag = progress > 0.5 ? 1 : 0;
-       
-       // Create the path
-       return `M ${cx + radius} ${cy} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${endX} ${endY}`;
-   };
-
-   const handleSetTime = (new_time) => {
-       const convertedTime = new_time * 1000; // Convert to milliseconds
-       setTimerDuration(convertedTime);
-       setTimeLeft(convertedTime);
-       setIsRunning(false);
-       setIsCompleted(false);
-   };
-
-   const handleLogTime = () => {
-       // Implement time logging functionality here
-       console.log(`Logged time: ${timerDuration / 1000} seconds`);
-       
-       // Reset timer after logging
-       setTimeLeft(timerDuration);
-       setIsCompleted(false);
-   };
-
-   const handleReset = () => {
-       setIsRunning(false);
-       setTimeLeft(timerDuration);
-       setIsCompleted(false);
-   };
-
-   return (
-       <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-           <View style={styles.container}>
-               <TopBar onSetTime={handleSetTime} />
-               <View style={styles.timerContainer}>
-                   <Svg width={300} height={300} viewBox="0 0 100 100">
-                       {/* Background Circle */}
-                       <Circle cx="50" cy="50" r="45" stroke="#E0E0E0" strokeWidth="6" fill="none" />
-                       
-                       {/* Elapsed (Gray) Arc */}
-                       {elapsedProgress > 0 && (
-                           <Path
-                               d={calculateArc(elapsedProgress)}
-                               stroke="#AAAAAA"  // Gray color for elapsed time
-                               strokeWidth="6"
-                               fill="none"
-                               strokeLinecap="round"
-                           />
-                       )}
-
-                       {/* Progress Circle (Blue) */}
-                       <Circle
-                           cx="50"
-                           cy="50"
-                           r="45"
-                           stroke="#2C7A7B"
-                           strokeWidth="6"
-                           fill="none"
-                           strokeDasharray={283}
-                           strokeDashoffset={283 - 283 * progress}
-                           strokeLinecap="round"
-                       />
-
-                       {/* Moving White Indicator */}
-                       <Circle
-                           cx={50 + 45 * Math.cos(2 * Math.PI * progress)}
-                           cy={50 + 45 * Math.sin(2 * Math.PI * progress)}
-                           r="4"
-                           fill="white"
-                           stroke="#FFFFFF"
-                           strokeWidth="1"
-                       />
-                   </Svg>
-
-                   <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
-               </View>
-
-               {/* Buttons section */}
-               <View style={styles.buttonContainer}>
-                   {isCompleted ? (
-                       <TouchableOpacity style={styles.logTimeButton} onPress={handleLogTime}>
-                           <Text style={styles.buttonText}>Log Time</Text>
-                       </TouchableOpacity>
-                   ) : !isRunning ? (
-                       <TouchableOpacity style={styles.startButton} onPress={() => setIsRunning(true)}>
-                           <Text style={styles.buttonText}>Start Timer</Text>
-                       </TouchableOpacity>
-                   ) : (
-                       <>
-                           <TouchableOpacity style={styles.stopButton} onPress={handleReset}>
-                               <Text style={styles.buttonText}>Reset</Text>
-                           </TouchableOpacity>
-                           <TouchableOpacity style={styles.pauseButton} onPress={() => setIsRunning(false)}>
-                               <Text style={styles.buttonText}>Pause</Text>
-                           </TouchableOpacity>
-                       </>
-                   )}
-               </View>
-           </View>
+                <View style={styles.buttonRow}>
+                    {!running ? (
+                        <TouchableOpacity
+                            style={styles.startButton}
+                            onPress={() => setRunning(true)}
+                        >
+                            <Text style={styles.buttonText}>Start</Text>
+                        </TouchableOpacity>
+                    ) : (
+                        <>
+                            <TouchableOpacity
+                                style={styles.stopButton}
+                                onPress={() => {
+                                    setRunning(false)
+                                    setTimeLeft(durationMs)
+                                }}
+                            >
+                                <Text style={styles.buttonText}>Reset</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.pauseButton}
+                                onPress={() => setRunning(false)}
+                            >
+                                <Text style={styles.buttonText}>Pause</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
+                </View>
+            </View>
         </TouchableWithoutFeedback>
-   );
-};
+    )
+}
 
+export default TimerScreen
+
+/** Styles */
 const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: '#fff',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingBottom: 40,
+    },
     topBar: {
         width: '90%',
         flexDirection: 'row',
         alignItems: 'center',
-        alignSelf: 'center',
         justifyContent: 'space-between',
         marginTop: 100,
-        paddingVertical: 5,
-        paddingHorizontal: 10,
-        backgroundColor: '#FFFFFF', //changed this for testing
-        //elevation: 2, // dropshadow Android
-        shadowColor: '#000', // dropshadow iOS
+        padding: 10,
+        backgroundColor: '#fff',
+        shadowColor: '#000',
         shadowOpacity: 0.1,
         shadowOffset: { width: 0, height: 2 },
         shadowRadius: 6,
-        borderWidth: 0,
         borderRadius: 10,
-
+    },
+    presetRow: {
+        flex: 1,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
     },
     timeOption: {
         paddingVertical: 6,
         paddingHorizontal: 9,
-        marginHorizontal: 2,
-        flex: 1,
-        paddingRight:2,
     },
-    selectedTime: {
+    timeOptionActive: {
         borderWidth: 1,
-        padding: 6,
-        borderRadius: 5,
-        borderColor: "#32768929",
+        borderColor: '#32768929',
         backgroundColor: '#B3D8E22E',
+        borderRadius: 5,
+        padding: 6,
     },
     timeText: {
-        color: '#000000',
         fontSize: 16,
-        fontFamily: 'Avenir',
+        color: '#000',
     },
-    selectedText: {
-        color: '#327689'
+    timeTextActive: {
+        color: '#327689',
     },
-
-    addButton: {
+    customButton: {
         backgroundColor: '#2C7A7B',
-        paddingVertical: 6,
-        paddingHorizontal: 12,
+        padding: 6,
         borderRadius: 20,
-        flex: 0.40,
+        marginLeft: 8,
     },
-    addButtonText: {
-        color: '#FFFFFF',
+    customButtonText: {
+        color: '#fff',
         fontSize: 16,
     },
-    container: {
-        flex: 1,
-        backgroundColor: '#FFFFFF',
+    customRow: {
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingBottom: 40, // Keep buttons lower
+    },
+    customInput: {
+        borderWidth: 1,
+        borderColor: '#327689',
+        borderRadius: 5,
+        padding: 8,
+        width: 80,
+        textAlign: 'center',
     },
     timerContainer: {
-        flex: 1, // Makes it take available space
-        justifyContent: 'center', // Centers vertically
-        alignItems: 'center', // Centers horizontally
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     timerText: {
-        fontSize: 36,
-        color: '#844016',
         position: 'absolute',
         top: '45%',
-        fontFamily: 'Avenir',
-        fontWeight: '500'
+        fontSize: 36,
+        fontWeight: '500',
+        color: '#844016',
     },
-   buttonContainer: { flexDirection: 'row', gap: 15, marginBottom: 40 },
-   startButton: {
-    backgroundColor: '#327680',
-    paddingVertical: 14,
-    paddingHorizontal: 70,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
-},
-stopButton: {
-    backgroundColor: '#327680',
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
-},
-pauseButton: {
-    backgroundColor: '#327680',
-    paddingVertical: 14,
-    paddingHorizontal: 30,
-    borderRadius: 30,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.5,
-    shadowRadius: 4,
-    elevation: 5,
-},
-buttonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    textAlign: 'center',
-},
-   logTimeButton: { backgroundColor: '#327680', paddingVertical: 14, paddingHorizontal: 45, borderRadius: 12 },
-   input: {
-    borderWidth: 1,
-    borderColor: '#327689',
-    borderRadius: 5,
-    padding: 8,
-    fontSize: 16,
-    textAlign: 'center',
-    width: '60%',  // Adjusted width to make it centered
-    marginHorizontal: 10,
-    alignSelf: 'center',
-},
-});
-
-export default TimerScreen;
+    buttonRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '80%',
+        marginBottom: 40,
+    },
+    startButton: {
+        backgroundColor: '#327680',
+        padding: 14,
+        borderRadius: 12,
+    },
+    stopButton: {
+        backgroundColor: '#CC4C4C',
+        padding: 14,
+        borderRadius: 12,
+    },
+    pauseButton: {
+        backgroundColor: '#F0A500',
+        padding: 14,
+        borderRadius: 12,
+    },
+    buttonText: {
+        color: '#fff',
+        fontSize: 18,
+    },
+})

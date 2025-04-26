@@ -3,7 +3,7 @@ import '../global.css'
 import { StyleSheet } from 'react-native'
 import { Redirect } from 'expo-router'
 export default function Index() {
-    return <Redirect href="/satisfaction-page" />
+    return <Redirect href="./timer" />
 }
 
 const styles = StyleSheet.create({
